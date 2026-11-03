@@ -1,0 +1,7 @@
+import {initialState} from './domain.mjs';
+let db;const channel=typeof BroadcastChannel!=='undefined'?new BroadcastChannel('packet-pataka'):null;
+export function openDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open('packet-pataka-v1',1);req.onupgradeneeded=()=>req.result.createObjectStore('state');req.onerror=()=>reject(req.error);req.onsuccess=()=>{db=req.result;db.onversionchange=()=>db.close();resolve(db);};});}
+export function read(){return new Promise((resolve,reject)=>{const tx=db.transaction('state','readonly');const req=tx.objectStore('state').get('root');req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
+export function mutate(fn){return new Promise((resolve,reject)=>{const tx=db.transaction('state','readwrite',{durability:'strict'});const st=tx.objectStore('state');let next,output,error;const req=st.get('root');req.onsuccess=()=>{try{next=req.result||initialState();output=fn(next);if(output instanceof Promise)throw Error('Storage mutations must be synchronous.');next.revision++;st.put(next,'root');}catch(e){error=e;tx.abort();}};tx.oncomplete=()=>{channel?.postMessage(next.revision);resolve({state:next,output});};tx.onerror=()=>reject(error||tx.error);tx.onabort=()=>reject(error||tx.error||Error('Storage write failed.'));});}
+export async function init(){await openDB();return (await mutate(()=>{})).state;}
+export function onExternalChange(fn){if(channel)channel.onmessage=fn;}

@@ -1,0 +1,8 @@
+node_modules/
+*.tar.gz
+*.tgz
+test-results/
+.DS_Store
+.env*
+.openai/local*
+fonts.css
