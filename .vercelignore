@@ -1,0 +1,13 @@
+.git
+.openai
+node_modules
+tests
+test-results
+playwright-report
+playwright.config.mjs
+make-icons.py
+server.mjs
+fonts.css
+*.tar.gz
+*.tgz
+.env*

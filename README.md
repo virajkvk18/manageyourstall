@@ -16,12 +16,13 @@ Open http://127.0.0.1:4173. The production files are the contents of `dist/`; no
 ## Configure the stall
 
 1. Open **More → Menu & prices**, create a local 4–8 digit admin PIN, and review prices.
-2. Pizza bites, cold drinks and the two combo bundles deliberately start without prices. Set a price, or uncheck **Show on menu**. They cannot be sold while unpriced.
+2. The stall menu starts with no prices at all. Every item remains visibly locked until you set its price, and locked items cannot be sold.
 3. Edit packet sizes and add-ons separately. Corn/Cheese presets inherit the packet price and add each topping only once. Bundle prices replace component prices; composition determines stock usage.
-4. **Stall settings** controls the target, promo amount/minimum, date, operator names, game fees and yellow accent. All amounts are INR.
-5. **Stock room** optionally enables stock tracking. Enter total stocked units, including already consumed units. Pizza stock is measured in individual bites: the initial five-piece product consumes five.
-6. Try **Practice counter**. It has its own clearly labelled orders, games, payments, draft and achievements. Load the provided sample orders or create your own. Menu/settings are shared between modes.
-7. Return to **Event setup → Start live event**. All active products must have prices. A new installation has zero live records. Starting live does not delete existing sales; resetting requires a separate typed confirmation.
+4. The board menu is arranged into **Crispy Dhamaka**, **Pizza Pataka**, **Fizz Pataka**, and **Combo Pataka**. It includes the Veggie, Corn, Veggie Cheese, Corn Cheese and Peri Peri Pataka sizes; Veggie/Corn/Cheese/Corn Cheese Pizza Pataka; Coca-Cola/Sprite/Fanta; and the five listed combos.
+5. **Stall settings** controls the target, promo amount/minimum, date, operator names, game fees and yellow accent. All amounts are INR.
+6. **Stock room** optionally enables stock tracking. Enter total stocked units, including already consumed units.
+7. Try **Practice counter** after you enter the required prices. It has its own clearly labelled orders, games, payments, draft and achievements. Menu/settings are shared between modes.
+8. Return to **Event setup → Start live event**. All visible products must have prices. A new installation has zero live records. Starting live does not delete existing sales; resetting requires a separate typed confirmation.
 
 ## Taking a sale
 
@@ -80,6 +81,20 @@ It covers checkout, explicit UPI confirmation, receipt/dashboard updates, persis
 Before event use, run the browser suite and rehearse the ₹160 order in Practice mode on the intended cashier phone. Test airplane-mode reload, save, reload again, a refund, and JSON restore on a separate browser profile. Return to live mode afterward.
 
 ## Deployment
+
+### Vercel
+
+Production URL: https://manageyourstall.vercel.app
+
+Vercel project: `manageyourstall`, workspace: `virajs-projects-5f821631`. The tracked `vercel.json` deploys `dist/` directly with no build/install commands and prevents stale HTTP caching of the service worker. `.vercelignore` excludes local tools, tests and Sites metadata.
+
+```sh
+vercel deploy --prod --yes --project manageyourstall --scope virajs-projects-5f821631
+```
+
+The Vercel URL uses its own browser storage. To move existing sales from the Sites URL or localhost, export JSON there and restore it on the Vercel URL. Publishing does not transfer device-local sales.
+
+### Other static hosting / Sites
 
 Upload the contents of `dist/` to any HTTPS static host, keeping the relative file layout. No environment variables or backend setup are needed. Serve `.mjs`/`.js` as JavaScript and `.webmanifest` as JSON. `sw.js` should be served without long-lived HTTP caching. Bump the shell cache version when publishing asset updates. The new worker activates after old tabs close; avoid a forced update mid-order.
 
