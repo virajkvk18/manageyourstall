@@ -15,3 +15,7 @@ ARCHITECTURE.md
 *.tgz
 .env*
 convex
+brag-output
+docs
+.claude
+skills-lock.json
