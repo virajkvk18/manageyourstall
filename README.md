@@ -1,116 +1,122 @@
-# Packet Pataka · Stall No. 10
+# ManageYourStall (MYS)
 
-A mobile-first, offline-oriented sales command center for the 4 November 2026 college Diwali celebration at Baderia Global Institute, Jabalpur. The investment-recovery target starts at **₹5,140**.
+**The offline-first point-of-sale and stall command center for temporary food & game stalls** — college fests, Diwali melas,
+flea markets and pop-ups across India. Sell fast at rush hour, take Cash / UPI / Split, call out kitchen tokens, track every rupee
+against your break-even, and send the day's numbers to your team on WhatsApp.
+
+_created by viraj_ · Live: https://manageyourstall.vercel.app
+
+MYS grew out of a single-stall app ("Packet Pataka · Stall No. 10", Diwali 2026). Everything that was hardcoded for that stall is
+now yours to customize — name, booth, taglines, event, menu, categories, prices, visuals, discounts, investment, milestones, team.
+
+---
+
+## Highlights
+
+- **6 pre-built stall themes** — Pataka Street Chaat & Snacks, Pizza & Fizz Hub, Chai/Coffee & Maggi Point, Momo & Fast-Food
+  Corner, Sweet Tooth & Dessert Bar, Mela Games & Lucky Zone (or Blank): each sets a themed Neo-Brutalist hero illustration, a colour
+  palette and an optional starter menu. Upload your own stall photo for the hero. Switch looks without touching your menu.
+- **Customize My Stall (Studio)** — stall name, booth/stall number, hero tagline & sub-tagline, event, venue, city, date, owner/team
+  & initials, accent + secondary colours, UPI ID, discount buttons, break-even mode, partners & cashiers, games, kitchen queue.
+- **Expenses ledger with bill photos** — log every bill in seconds: title, category (Pre-Stall Setup, Mid-Stall Restock 🔄, Stall
+  Rent / Registration, Packaging & Plates, Decor / Banner, Misc), amount, Cash/UPI, who paid (a partner or the stall cash drawer),
+  a snapped photo of the bill and notes. **+ Quick mid-stall restock** from the Dashboard or Expenses. Every bill instantly raises the
+  break-even target (*break-even = all bills*), so the progress bar, milestones and net profit (*revenue − all bills*) stay true.
+- **Team "Contri" & profit splitter** — partners with colours and equal or custom profit shares; each partner's contri plus the bills
+  they paid from their own pocket = what they put in; a live leaderboard; and a 1-tap **end-of-stall settlement**: step 1 pays back
+  everyone's capital (proportionally if the stall made a loss), step 2 splits the pure profit, with a bold take-home card per person
+  (exact to the paisa) and a WhatsApp-ready settlement report. Save settlement snapshots for the record.
+- **Stall's Collab<sup>COMING SOON</sup>** — an interactive preview of stall-to-stall teamwork: cross-stall combo tokens that rescue
+  quiet stalls, a deal-room chat, a booth exchange board, a mid-rush "Fest Lifeline" SOS for change/plates/ice, a collab match
+  simulator and a feature poll.
+- **Menu manager** — create / edit / duplicate / delete / reorder categories and items; sizes & variants; combos priced once with
+  component stock; add-ons & flavours; tags (POP!, BESTSELLER, SPICY, NEW, COMBO, CHILLED); 1-tap **Sold out / In stock**.
+- **Stall setup mode & price locks** — unpriced items stay locked and unsellable; batch-set prices on the Price board; lock prices
+  against accidental edits; quick price edits on the fly.
+- **Visual library** — 48 Neo-Brutalist illustrations of Indian stall favourites (samosa, pani puri, momos, maggi, pav bhaji, chai,
+  kulhad chai, cold coffee, mojito, gulab jamun, ring toss, spin the wheel…), plus your own photo (compressed, stored offline) or an
+  image link, with pastel tints and patterns.
+- **Rush-hour selling** — search, category chips, Top sellers, steppers right on the cards, order notes, clear cart, Ctrl+Enter.
+- **Review & pay** — 1-tap discount chips (₹ or %, with minimums) + custom discount; **Cash** with quick notes (Exact, ₹50, ₹100,
+  ₹200, ₹500) and instant change; **UPI** with a scannable QR for the exact amount (`upi://pay?pa=…&pn=…&am=…&cu=INR`);
+  **Split** (part cash, part UPI); pending "pay later" orders. MYS never claims to verify bank payments — the cashier confirms.
+- **Tokens & kitchen queue** — every order gets a daily token (#01, #02…, resets each IST day or on demand); Preparing → Ready →
+  Handed over board for the person at the stove.
+- **Mission & profit mode** — break-even from your logged bills (recommended), or one total / a planned list plus bills; live
+  recovery bar that flips to **PROFIT MODE 🔥**.
+- **Built for every screen** — laptop (≥1024px): sidebar · workspace · sticky live cart; tablet (768–1023px): icon rail, 2-column
+  grid, slide-over cart drawer; phone (<768px): brand bar, 1-thumb bottom nav and a floating "N items · ₹Total · Review & Pay →" bar
+  that opens a full-screen order sheet. One 8/12/16/24/32px spacing scale everywhere.
+- **Milestones** — editable and auto-generated (First sale, ₹1,000 Club, Halfway there, Break-even boss, ₹10,000 Dhamaka…), with
+  honest reversal on refunds.
+- **Day report** — WhatsApp-ready summary (revenue, investment, profit/recovery %, orders, top 3, Cash vs UPI) with Copy and
+  Share to WhatsApp.
+- **Data safety** — IndexedDB with atomic transactions, idempotent checkout, multi-tab safety, practice ledger, audit trail for every
+  correction, CSV exports (itemized orders, order summary, payments, bills, contri, settlement), full JSON backup & validated restore
+  (including bill and hero photos), and separate **Reset sales only**, **Reset today's orders** and **Factory reset** controls.
+  Works fully offline after the first visit. (Data lives in IndexedDB — sturdier than localStorage for money records and photos.)
 
 ## Run locally
 
-Requires Node.js 22+ (developed on Node 24). The application has no runtime framework, package CDN, backend, account service or API key. It is a small static ES-module app with IndexedDB. Development dependencies are only for tests.
+Requires Node.js 22+. No build step, no runtime dependencies — `dist/` is the app.
 
 ```sh
 npm install
-npm start
+npm start            # http://127.0.0.1:4173
 ```
 
-Open http://127.0.0.1:4173. The production files are the contents of `dist/`; no build step is needed. The development server binds to loopback only. For a phone, deploy `dist/` to an HTTPS static host.
-
-## Configure the stall
-
-1. Open **More → Menu & prices**, create a local 4–8 digit admin PIN, and review prices.
-2. The stall menu starts with no prices at all. Every item remains visibly locked until you set its price, and locked items cannot be sold.
-3. Edit packet sizes and add-ons separately. Corn/Cheese presets inherit the packet price and add each topping only once. Bundle prices replace component prices; composition determines stock usage.
-4. The board menu is arranged into **Crispy Dhamaka**, **Pizza Pataka**, **Fizz Pataka**, and **Combo Pataka**. It includes the Veggie, Corn, Veggie Cheese, Corn Cheese and Peri Peri Pataka sizes; Veggie/Corn/Cheese/Corn Cheese Pizza Pataka; Coca-Cola/Sprite/Fanta; and the five listed combos.
-5. **Stall settings** controls the target, promo amount/minimum, date, operator names, game fees and yellow accent. All amounts are INR.
-6. **Stock room** optionally enables stock tracking. Enter total stocked units, including already consumed units.
-7. Try **Practice counter** after you enter the required prices. It has its own clearly labelled orders, games, payments, draft and achievements. Menu/settings are shared between modes.
-8. Return to **Event setup → Start live event**. All visible products must have prices. A new installation has zero live records. Starting live does not delete existing sales; resetting requires a separate typed confirmation.
-
-## Taking a sale
-
-Tap a drink or preset to add immediately. Small/Large open a sheet for packet size, flavour, premium toppings and quantity. The cart is saved after each change and survives navigation/reload. Saved drafts retain their price snapshots; remove and re-add a line to use a new menu price.
-
-Choose **Review & pay**, optionally apply the reel/banner promotion once, select Cash/UPI/Other, and complete the sale. UPI and Other require an explicit receipt confirmation. **The app does not process money or verify bank transactions.** The cash calculator is optional. Pending orders reserve stock but do not increase collected revenue; confirm payment later from the receipt.
-
-The brief’s example: 2 small cheese packets (₹80), 1 large corn packet (₹50), 2 lemon sodas (₹40), minus one ₹10 promotion = **₹160**.
-
-## Corrections, reporting and games
-
-Open an order receipt, choose **Correct order**, unlock admin, enter a reason and confirm. A full or partial refund creates a negative payment against the original payment method. Void reverses any remaining collection and releases stock. Refunds do not put already prepared food back into stock. Receipts and corrections remain in the audit history.
-
-Recorded collections are confirmed payments less refunds, including paid physical games. Pending orders and free games add no revenue. Game participation does not increase food-order counts. Reverse a mistaken game from the game history with admin confirmation.
-
-Fully refunded/void orders are excluded from eligible order and item counts; partial refunds keep the original units because the refund is monetary rather than itemized. A bundle counts as one sold line unit but consumes its configured component stock. Gross item/category rankings are labelled separately from net collections. Promo totals show discounts granted on paid orders, including subsequently refunded orders. Hourly collections use payment/refund times in Asia/Kolkata.
-
-Milestones respond to refunds and reversals. Original unlock timestamps remain visible. Money over ₹5,140 is **Above Recovery Target**, not exact profit. Expenses appear separately; collections less recorded expenses are not claimed as accounting profit. The initial investment is never automatically deducted a second time.
-
-## Offline and data safety
-
-- IndexedDB is the financial source of truth. A strict read/write transaction saves orders, payments, draft clearing, inventory implications and audit events together. Success is shown only after the transaction completes.
-- Random UUIDs are idempotency keys. Repeated completion with the same key creates one order. Concurrent tabs serialize writes. A tab broadcast refreshes views; a changed cart must be reviewed again before payment.
-- The service worker precaches the shell, local fonts, icons and code. **Visit online once and let the service worker finish before relying on offline use.** A device that has never loaded the app cannot open it without a network connection.
-- Use the same browser profile and origin. Separate browsers, private windows, local preview and hosted deployment each have separate data.
-- Request persistent storage in More, but browser approval is not guaranteed. Clearing browser data, eviction or losing the phone may remove records. JSON exports are essential.
-- This is **single-checkout-device mode**. No multi-device synchronization, cloud backup, server queue or shared team ledger is implemented. Online does not mean synchronized.
-- The local PIN is an accidental-change guard, not strong security or cloud authorization. There is no remote recovery for a forgotten PIN. Store the PIN securely; restore an appropriate backup only if you know its PIN.
-
-## Backup and restore
-
-More → Backup & exports provides itemized order CSV, payment-ledger CSV and a full JSON backup of both modes, catalog, settings, PIN hash and audit history. Export JSON regularly and before resets or moving devices. Keep it private.
-
-Order-level totals repeat on every item row in the itemized CSV; **do not sum those repeated columns**. Use one row per order or the payments CSV to reconcile net collections. CSV text fields are escaped to reduce spreadsheet formula injection.
-
-Restore validates backup totals and ledger references before asking for admin confirmation. Restoring replaces the device database atomically; it does not merge records. A backup from a different origin can be imported manually to move to the published site. Reset actions require exact typed confirmation.
-
-## Tests and verification
+## Verify
 
 ```sh
-npm run check
-npm test
+npm run verify       # static checks + typecheck of the pure modules + unit tests
+npx playwright install chromium   # once, if Chrome isn't installed
+npm run test:browser # Playwright: desktop 1440, tablet 820, mobile 390, narrow 320
 ```
 
-38 passing automated tests cover exact paise arithmetic, the requested ₹160 order, promos, variants, bundles, stock, pending payments, refunds, historical snapshots, idempotency, achievements, backup validation and IndexedDB transaction rollback/concurrency using `fake-indexeddb`.
+## Deploy
 
-Browser automation is provided for desktop (1440px), mobile (390px) and narrow (320px):
-
-```sh
-npx playwright install chromium
-npm run test:browser
-```
-
-It covers checkout, explicit UPI confirmation, receipt/dashboard updates, persistence, pending payments, cart removal, offline reload and horizontal overflow. **These browser tests have not yet been run in this handoff because the browser preview permission gate declined access.** Actual mobile rendering, PWA installation and offline restart on the target phone still require verification. Unit tests are not a substitute for those checks.
-
-Before event use, run the browser suite and rehearse the ₹160 order in Practice mode on the intended cashier phone. Test airplane-mode reload, save, reload again, a refund, and JSON restore on a separate browser profile. Return to live mode afterward.
-
-## Deployment
-
-### Vercel
-
-Production URL: https://manageyourstall.vercel.app
-
-Vercel project: `manageyourstall`, workspace: `virajs-projects-5f821631`. The tracked `vercel.json` deploys `dist/` directly with no build/install commands and prevents stale HTTP caching of the service worker. `.vercelignore` excludes local tools, tests and Sites metadata.
+`dist/` is a static site. Vercel project `manageyourstall` deploys it directly (`vercel.json`: no build, `outputDirectory: dist`,
+`sw.js` served without caching):
 
 ```sh
 vercel deploy --prod --yes --project manageyourstall --scope virajs-projects-5f821631
 ```
 
-The Vercel URL uses its own browser storage. To move existing sales from the Sites URL or localhost, export JSON there and restore it on the Vercel URL. Publishing does not transfer device-local sales.
+Each origin (localhost, the Vercel URL, another host) has its own on-device data. Move a stall between devices or origins with
+**More → Backup & exports → Download full backup**, then **Restore** on the other side.
 
-### Other static hosting / Sites
+## Upgrading from Packet Pataka (v1)
 
-Upload the contents of `dist/` to any HTTPS static host, keeping the relative file layout. No environment variables or backend setup are needed. Serve `.mjs`/`.js` as JavaScript and `.webmanifest` as JSON. `sw.js` should be served without long-lived HTTP caching. Bump the shell cache version when publishing asset updates. The new worker activates after old tabs close; avoid a forced update mid-order.
+Opening MYS on a device that ran Packet Pataka migrates the saved data automatically and losslessly: every order, payment, refund,
+game, expense, milestone, PIN and setting carries over (verified by fuzz tests that replay hundreds of v1 stall histories through the
+original v1 code). Your stall keeps its name and menu; the new features are available immediately. A new service worker activates
+after old tabs are closed (MYS shows an "Update" button instead of reloading mid-order).
 
-The `.openai/hosting.json` file retains this project’s Sites identity and static deployment directory. Source and deployment are packaged by the Sites workflow. The initial Site audience is owner-private; public/team sharing has not been enabled. A private hosting login may require connectivity before first use; test the installed app under actual event conditions.
+## Architecture
 
-## Structure
+See [ARCHITECTURE.md](ARCHITECTURE.md) — the contract for the data model (schema v2), the pure modules (`domain`, `catalog`,
+`templates`, `qr`, `library`), storage, the UI kernel, screens and the Neo-Brutalist design system.
 
-- `dist/domain.mjs`: pricing, transaction rules, ledger reports, stock and milestones.
-- `dist/storage.mjs`: atomic IndexedDB adapter and same-origin tab notifications.
-- `dist/app.mjs`: rendered screens, checkout, admin guard and exports.
-- `dist/art.mjs`, `dist/style.css`: local vector illustrations, icons and responsive design.
-- `dist/sw.js`, `manifest.webmanifest`: offline shell and installation metadata.
-- `tests/`: automated domain/storage tests and browser acceptance suite.
+```
+dist/
+  index.html · manifest.webmanifest · sw.js · icons · fonts
+  util.mjs constants.mjs           shared helpers & vocabulary
+  domain.mjs                       ledger, payments, tokens, reports, migration, backups (pure)
+  catalog.mjs                      menu & settings editing + validation (pure)
+  templates.mjs                    starter stall templates (pure data)
+  qr.mjs                           QR encoder for UPI (pure)
+  library.mjs art/*.mjs            visual library
+  storage.mjs                      IndexedDB (state + photos)
+  ui/core.mjs ui/shell.mjs         UI kernel, layout & branding
+  ui/*.mjs css/*.css               feature screens
+tests/                             node:test unit tests + Playwright specs
+```
 
-## Design references
+## Honest limits
 
-The supplied comic UI image informed the warm cream, Pataka pink, yellow, ink outlines, logo treatment and food illustrations. Art is implemented as lightweight local SVG. Fonts are Google Fonts’ Space Grotesk and Archivo Black, distributed under the SIL Open Font License (see `licenses/`).
+- Single checkout device per stall: no cloud sync. Other phones keep their own separate data.
+- UPI and "Other" payments are confirmed by the cashier; MYS does not talk to banks.
+- The admin PIN is a shared-phone guard, not account security. There is no remote PIN recovery — keep backups.
+- Clearing browser data or losing the phone loses records that weren't exported. Export backups regularly.
 
-Implementation references: [web.dev offline data](https://web.dev/learn/pwa/offline-data) and [W3C target size guidance](https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum/). Primary controls aim for 44px or larger; reduced-motion and keyboard focus styles are included.
+Fonts: Space Grotesk and Archivo Black (SIL Open Font License, see `licenses/`).

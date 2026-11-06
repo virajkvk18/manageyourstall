@@ -1,0 +1,594 @@
+/* Visual picker (ui/picker.mjs, ARCHITECTURE.md §13.7). Only .pick-* classes live here; base tokens/classes are reused. */
+
+.pick-wrap {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: var(--sp-4);
+  align-items: start;
+}
+/* Keep the sheet the same size while switching tabs: the picker's sheet always takes its full height (only while the
+   picker is inside it; the base max-height still applies). */
+#sheet:has(> .sheet-body > .pick-wrap) {
+  height: min(90dvh, 960px);
+}
+.pick-side {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+.pick-main {
+  min-width: 0;
+}
+
+/* Live preview card */
+.pick-preview {
+  display: grid;
+  gap: var(--sp-2);
+  padding: var(--sp-2);
+  border: var(--line);
+  border-radius: var(--r-lg);
+  background: var(--paper-2);
+  box-shadow: var(--shadow);
+}
+.pick-preview .pick-preview-art {
+  max-width: none;
+  box-shadow: var(--shadow-sm);
+}
+.pick-preview-text {
+  display: grid;
+  gap: calc(var(--sp-1) / 2);
+  min-width: 0;
+}
+.pick-source {
+  justify-self: start;
+}
+.pick-preview-name {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+.pick-preview-meta {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+.pick-preview-note {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+/* Tabs */
+.pick-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: var(--sp-3);
+  border: var(--line);
+  border-radius: var(--r);
+  background: var(--paper-2);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+button.pick-tab {
+  min-width: 0;
+  min-height: 50px;
+  padding: var(--sp-1);
+  border: 0;
+  border-right: var(--line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none !important;
+  transform: none !important;
+  font-size: 14px;
+}
+button.pick-tab:last-child {
+  border-right: 0;
+}
+@media (hover: hover) {
+  button.pick-tab:not(.active):hover {
+    background: var(--yellow-soft);
+  }
+}
+button.pick-tab.active {
+  background: var(--ink);
+  color: var(--paper);
+}
+button.pick-tab:focus-visible {
+  outline-offset: -5px;
+}
+.pick-panel:focus {
+  outline: none;
+}
+
+/* Library */
+.pick-search {
+  position: relative;
+  margin-bottom: var(--sp-2);
+}
+.pick-search .pick-search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.pick-search input.input {
+  padding-left: calc(var(--sp-5) + var(--sp-2));
+}
+.pick-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-2);
+  padding: calc(var(--sp-1) / 4) calc(var(--sp-1) / 2) calc(var(--sp-1) / 2) calc(var(--sp-1) / 4);
+}
+.pick-groups > .chip {
+  /* Never shrink: on phones the row scrolls sideways instead (min-width would otherwise let chips squash to 44px). */
+  flex: 0 0 auto;
+  min-width: 44px;
+  justify-content: center;
+}
+.pick-count {
+  margin: 0 0 var(--sp-1);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.pick-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: var(--sp-2);
+  padding: 0 calc(var(--sp-1) / 2) calc(var(--sp-1) / 2) 0;
+}
+button.pick-art {
+  position: relative;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: var(--sp-1);
+  min-width: 0;
+  min-height: 0;
+  padding: var(--sp-1);
+  border-radius: var(--r);
+  background: var(--paper-2);
+  box-shadow: none;
+  font-size: 12px;
+  font-weight: 800;
+}
+.pick-art-thumb {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border: 1.5px solid rgba(23, 23, 23, 0.18);
+  border-radius: 8px;
+}
+.pick-art-thumb .food-art {
+  width: 90%;
+  height: 90%;
+}
+.pick-art-label {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  min-height: 2.4em;
+  overflow: hidden;
+  line-height: 1.2;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.pick-art-check {
+  position: absolute;
+  top: -9px;
+  right: -9px;
+  display: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: var(--line);
+  border-radius: 50%;
+  background: var(--pink);
+  color: var(--ink);
+}
+.pick-art-check .icon {
+  width: 16px;
+  height: 16px;
+  stroke-width: 3;
+}
+button.pick-art.active {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-width: 3px;
+  padding: calc(var(--sp-1) / 2) calc(var(--sp-1) / 2) var(--sp-1);
+  box-shadow: var(--shadow);
+}
+button.pick-art.active .pick-art-thumb {
+  border: var(--line);
+}
+button.pick-art.active .pick-art-check {
+  display: grid;
+}
+.pick-empty {
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-1);
+  padding: var(--sp-4) var(--sp-3);
+  border: 2px dashed rgba(23, 23, 23, 0.28);
+  border-radius: var(--r-lg);
+  text-align: center;
+  font-size: 14px;
+}
+.pick-empty > .icon {
+  width: 32px;
+  height: 32px;
+}
+.pick-empty p {
+  max-width: 36ch;
+}
+
+/* Photo notice (Library / Style when a photo is set). Extra specificity: base `.notice:has(> .icon:first-child)` is flex. */
+.pick-panel > .notice.pick-photo-note.pick-photo-note {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-2);
+}
+.pick-photo-note > .icon:first-child {
+  margin-top: 0;
+}
+.pick-photo-note > button {
+  white-space: nowrap;
+}
+.pick-photo-note .grow {
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+/* Upload */
+label.pick-drop {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: 104px;
+  padding: var(--sp-3);
+  border: 3px dashed var(--ink);
+  border-radius: var(--r-lg);
+  background: var(--yellow-soft);
+  cursor: pointer;
+  transition: background-color 0.12s ease, transform 0.08s ease;
+}
+@media (hover: hover) {
+  label.pick-drop:hover {
+    background: var(--yellow);
+  }
+}
+label.pick-drop:active {
+  transform: translate(2px, 2px);
+}
+label.pick-drop.busy {
+  cursor: progress;
+  opacity: 0.6;
+}
+.pick-panel:has(#pick-file:focus-visible) label.pick-drop {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+.pick-drop-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 60px;
+  height: 60px;
+  border: var(--line);
+  border-radius: 50%;
+  background: var(--pink);
+  box-shadow: var(--shadow-sm);
+  transform: rotate(-6deg);
+}
+.pick-drop-icon .icon {
+  width: 28px;
+  height: 28px;
+  stroke-width: 2.4;
+}
+.pick-drop-text {
+  display: grid;
+  gap: calc(var(--sp-1) / 2);
+  min-width: 0;
+}
+.pick-drop-text strong {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1.15;
+}
+.pick-drop-text small {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.pick-upload-status {
+  margin-top: var(--sp-2);
+}
+.pick-upload-current {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+  padding: var(--sp-1) var(--sp-2);
+  border: var(--line);
+  border-radius: var(--r);
+  background: var(--mint-soft);
+}
+.pick-upload-current .grow {
+  display: grid;
+  gap: calc(var(--sp-1) / 4);
+  flex: 1 1 120px;
+  min-width: 0;
+}
+.pick-upload-current small {
+  font-size: 12px;
+  color: var(--muted);
+}
+.pick-footnote {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-1);
+  margin: var(--sp-3) 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.pick-footnote strong {
+  color: var(--ink);
+}
+.pick-spin {
+  animation: pick-spin 0.9s linear infinite;
+}
+@keyframes pick-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Link */
+.pick-url-field small.pick-url-msg.bad {
+  color: var(--danger-ink);
+  font-weight: 700;
+}
+.pick-link-preview {
+  display: grid;
+  place-items: center;
+  gap: var(--sp-1);
+  min-height: 170px;
+  margin-bottom: var(--sp-2);
+  padding: var(--sp-2);
+  border: 2px dashed rgba(23, 23, 23, 0.3);
+  border-radius: var(--r);
+  background: var(--paper-2);
+}
+.pick-link-preview[data-state='ok'] {
+  border-style: solid;
+  border-color: var(--ink);
+  background: var(--mint-soft);
+}
+.pick-link-preview[data-state='error'],
+.pick-link-preview[data-state='invalid'] {
+  background: var(--coral-soft);
+}
+.pick-link-img {
+  display: block;
+  max-width: 100%;
+  max-height: 220px;
+  border: var(--line);
+  border-radius: 10px;
+  background: #fff;
+  object-fit: contain;
+}
+.pick-link-msg {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  font-size: 14px;
+  font-weight: 700;
+  text-align: left;
+}
+.pick-link-preview[data-state='idle'] .pick-link-msg {
+  color: var(--muted);
+}
+
+/* Style */
+.pick-label {
+  margin: 0 0 var(--sp-1);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.pick-swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-4);
+  padding: 0 calc(var(--sp-1) / 2) calc(var(--sp-1) / 2) 0;
+}
+button.pick-swatch {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--sp-1);
+  min-width: 0;
+  min-height: 0;
+  padding: var(--sp-1);
+  background: var(--paper-2);
+  box-shadow: none;
+  font-size: 12px;
+  font-weight: 800;
+}
+.pick-swatch-chip {
+  display: block;
+  height: 46px;
+  border: var(--line);
+  border-radius: 8px;
+}
+.pick-swatch-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+button.pick-swatch.active {
+  background: var(--ink);
+  color: var(--paper);
+  box-shadow: 3px 3px 0 var(--pink);
+}
+button.pick-swatch.active .pick-swatch-chip {
+  border-color: var(--paper);
+}
+
+/* Sheet action: "Use this" gets the bigger share */
+.sheet-actions > button.pick-use {
+  flex-grow: 2;
+}
+
+/* Tablet: narrower preview column */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .pick-wrap {
+    grid-template-columns: 210px minmax(0, 1fr);
+    gap: var(--sp-3);
+  }
+  .pick-preview-name {
+    font-size: 19px;
+  }
+}
+
+/* Phone: compact sticky preview strip on top, tabs below */
+@media (max-width: 767px) {
+  .pick-wrap {
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    gap: var(--sp-2);
+  }
+  #sheet:has(> .sheet-body > .pick-wrap) {
+    height: 94dvh;
+  }
+  .pick-side {
+    top: calc(var(--sp-3) * -1); /* = base mobile .sheet-body padding-top */
+    margin: calc(var(--sp-3) * -1) calc(var(--sp-3) * -1) 0;
+    padding: var(--sp-2) var(--sp-3) var(--sp-1);
+    background: var(--paper);
+    border-bottom: var(--line-soft);
+  }
+  .pick-preview {
+    grid-template-columns: 84px minmax(0, 1fr);
+    align-items: center;
+    gap: var(--sp-2);
+    padding: var(--sp-1);
+    box-shadow: var(--shadow-sm);
+  }
+  .pick-preview .pick-preview-art {
+    width: 84px;
+    border-radius: 12px;
+  }
+  .pick-preview-text {
+    gap: calc(var(--sp-1) / 2);
+  }
+  .pick-preview-name {
+    font-size: 18px;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+  .pick-preview-meta {
+    font-size: 12px;
+  }
+  .pick-preview-note {
+    font-size: 11.5px;
+  }
+  .pick-source {
+    font-size: 10px;
+  }
+  .pick-tabs {
+    margin-bottom: var(--sp-2);
+  }
+  .pick-panel > .notice.pick-photo-note.pick-photo-note {
+    grid-template-columns: 22px minmax(0, 1fr);
+    align-items: start;
+  }
+  .pick-photo-note > button {
+    grid-column: 2;
+    justify-self: start;
+  }
+  button.pick-tab {
+    flex-direction: column;
+    gap: calc(var(--sp-1) / 4);
+    min-height: 56px;
+    padding: var(--sp-1) calc(var(--sp-1) / 4);
+    font-size: 12.5px;
+  }
+  .pick-groups {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin: 0 calc(var(--sp-3) * -1) var(--sp-1);
+    padding: calc(var(--sp-1) / 4) var(--sp-3) var(--sp-1);
+    scrollbar-width: none;
+  }
+  .pick-groups::-webkit-scrollbar {
+    display: none;
+  }
+  .pick-grid {
+    grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+    gap: var(--sp-1);
+  }
+  .pick-swatches {
+    grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+    gap: var(--sp-1);
+  }
+  label.pick-drop {
+    min-height: 92px;
+    padding: var(--sp-2);
+    gap: var(--sp-2);
+  }
+  .pick-drop-icon {
+    width: 52px;
+    height: 52px;
+  }
+  .pick-drop-text strong {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 350px) {
+  .pick-preview {
+    grid-template-columns: 68px minmax(0, 1fr);
+    gap: var(--sp-1);
+  }
+  .pick-preview .pick-preview-art {
+    width: 68px;
+  }
+  .pick-preview-name {
+    font-size: 16px;
+  }
+  .pick-preview-note {
+    display: none;
+  }
+  button.pick-tab {
+    font-size: 11.5px;
+  }
+  button.pick-tab .icon {
+    width: 18px;
+    height: 18px;
+  }
+  .pick-grid {
+    grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
+    gap: var(--sp-1);
+  }
+  .pick-drop-text strong {
+    font-size: 16px;
+  }
+}

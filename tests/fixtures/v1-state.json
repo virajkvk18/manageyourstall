@@ -1,0 +1,907 @@
+{
+ "version": 1,
+ "revision": 57,
+ "mode": "live",
+ "pin": {
+  "salt": "0b6c1f0e-1111-4c4c-9a9a-000000000001",
+  "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ },
+ "config": {
+  "menuVersion": 2,
+  "stallName": "Packet Pataka",
+  "stallNumber": "10",
+  "eventDate": "2026-11-04",
+  "target": 514000,
+  "promo": 1000,
+  "promoMinimum": 0,
+  "operator": "Team Pataka",
+  "operators": [
+   "Team Pataka",
+   "Cashier 1",
+   "Cashier 2",
+   "Games crew"
+  ],
+  "accent": "#FFDD35",
+  "inventory": true,
+  "stock": {
+   "small": 100,
+   "large": 100,
+   "pizza": 50,
+   "cocaCola": 40,
+   "sprite": 40,
+   "fanta": 40
+  },
+  "flavours": [
+   "Lay’s Classic Salted",
+   "Lay’s Magic Masala",
+   "Lay’s Cream & Onion",
+   "Lay’s Tomato Tango",
+   "Kurkure Masala Munch",
+   "Kurkure Chilli Chatka",
+   "Bingo Mad Angles",
+   "Bingo Tedhe Medhe"
+  ],
+  "addons": [
+   {
+    "id": "corn",
+    "name": "Sweet Corn",
+    "price": 1000
+   },
+   {
+    "id": "cheese",
+    "name": "Cheese Sauce",
+    "price": 1000
+   }
+  ],
+  "games": [
+   {
+    "id": "wheel",
+    "name": "Spin the Wheel",
+    "fee": 2000
+   },
+   {
+    "id": "coin",
+    "name": "Coin in the Bucket",
+    "fee": 0
+   }
+  ],
+  "products": [
+   {
+    "id": "veggie-small",
+    "name": "Veggie Pataka · Small",
+    "category": "Crispy Dhamaka",
+    "price": 3000,
+    "art": "packet",
+    "tint": "pink",
+    "active": true,
+    "soldOut": false,
+    "size": "Small",
+    "stockKey": "small"
+   },
+   {
+    "id": "veggie-large",
+    "name": "Veggie Pataka · Large",
+    "category": "Crispy Dhamaka",
+    "price": 5000,
+    "art": "packet",
+    "tint": "yellow",
+    "active": true,
+    "soldOut": false,
+    "size": "Large",
+    "stockKey": "large"
+   },
+   {
+    "id": "corn-small",
+    "name": "Corn Pataka · Small",
+    "category": "Crispy Dhamaka",
+    "price": 3000,
+    "art": "corn",
+    "tint": "cream",
+    "active": true,
+    "soldOut": false,
+    "size": "Small",
+    "stockKey": "small"
+   },
+   {
+    "id": "corn-large",
+    "name": "Corn Pataka · Large",
+    "category": "Crispy Dhamaka",
+    "price": 5000,
+    "art": "corn",
+    "tint": "yellow",
+    "active": true,
+    "soldOut": false,
+    "size": "Large",
+    "stockKey": "large"
+   },
+   {
+    "id": "veggie-cheese-small",
+    "name": "Veggie Cheese Pataka · Small",
+    "category": "Crispy Dhamaka",
+    "price": 3000,
+    "art": "packet",
+    "tint": "lime",
+    "active": true,
+    "soldOut": false,
+    "size": "Small",
+    "stockKey": "small"
+   },
+   {
+    "id": "veggie-cheese-large",
+    "name": "Veggie Cheese Pataka · Large",
+    "category": "Crispy Dhamaka",
+    "price": 5000,
+    "art": "packet",
+    "tint": "lime",
+    "active": true,
+    "soldOut": false,
+    "size": "Large",
+    "stockKey": "large"
+   },
+   {
+    "id": "corn-cheese-small",
+    "name": "Corn Cheese Pataka · Small",
+    "category": "Crispy Dhamaka",
+    "price": 3000,
+    "art": "corn",
+    "tint": "pink",
+    "active": true,
+    "soldOut": false,
+    "size": "Small",
+    "stockKey": "small"
+   },
+   {
+    "id": "corn-cheese-large",
+    "name": "Corn Cheese Pataka · Large",
+    "category": "Crispy Dhamaka",
+    "price": 5000,
+    "art": "corn",
+    "tint": "pink",
+    "active": true,
+    "soldOut": false,
+    "size": "Large",
+    "stockKey": "large"
+   },
+   {
+    "id": "peri-peri-small",
+    "name": "Peri Peri Pataka · Small",
+    "category": "Crispy Dhamaka",
+    "price": 3000,
+    "art": "packet",
+    "tint": "cream",
+    "active": true,
+    "soldOut": false,
+    "size": "Small",
+    "stockKey": "small"
+   },
+   {
+    "id": "peri-peri-large",
+    "name": "Peri Peri Pataka · Large",
+    "category": "Crispy Dhamaka",
+    "price": 5000,
+    "art": "packet",
+    "tint": "yellow",
+    "active": true,
+    "soldOut": false,
+    "size": "Large",
+    "stockKey": "large"
+   },
+   {
+    "id": "pizza-veggie",
+    "name": "Veggie Pizza Pataka",
+    "category": "Pizza Pataka",
+    "price": 3000,
+    "art": "pizza",
+    "tint": "pink",
+    "active": true,
+    "soldOut": false,
+    "stockKey": "pizza"
+   },
+   {
+    "id": "pizza-corn",
+    "name": "Corn Pizza Pataka",
+    "category": "Pizza Pataka",
+    "price": 3000,
+    "art": "pizza",
+    "tint": "yellow",
+    "active": true,
+    "soldOut": false,
+    "stockKey": "pizza"
+   },
+   {
+    "id": "pizza-cheese",
+    "name": "Cheese Pizza Pataka",
+    "category": "Pizza Pataka",
+    "price": 3000,
+    "art": "pizza",
+    "tint": "lime",
+    "active": true,
+    "soldOut": false,
+    "stockKey": "pizza"
+   },
+   {
+    "id": "pizza-corn-cheese",
+    "name": "Corn Cheese Pizza Pataka",
+    "category": "Pizza Pataka",
+    "price": 3000,
+    "art": "pizza",
+    "tint": "cream",
+    "active": true,
+    "soldOut": false,
+    "stockKey": "pizza"
+   },
+   {
+    "id": "fizz-coca-cola",
+    "name": "Coca-Cola",
+    "category": "Fizz Pataka",
+    "price": 2000,
+    "art": "cold",
+    "tint": "pink",
+    "active": true,
+    "soldOut": false,
+    "stockKey": "cocaCola"
+   },
+   {
+    "id": "fizz-sprite",
+    "name": "Sprite",
+    "category": "Fizz Pataka",
+    "price": 2000,
+    "art": "lemon",
+    "tint": "lime",
+    "active": true,
+    "soldOut": false,
+    "stockKey": "sprite"
+   },
+   {
+    "id": "fizz-fanta",
+    "name": "Fanta",
+    "category": "Fizz Pataka",
+    "price": 2000,
+    "art": "masala",
+    "tint": "yellow",
+    "active": true,
+    "soldOut": false,
+    "stockKey": "fanta"
+   },
+   {
+    "id": "combo-veggie-fizz",
+    "name": "Veggie Pataka + Fizz",
+    "category": "Combo Pataka",
+    "price": 7000,
+    "art": "packet",
+    "tint": "pink",
+    "active": true,
+    "soldOut": false,
+    "bundle": [
+     {
+      "productId": "veggie-small",
+      "quantity": 1
+     },
+     {
+      "productId": "fizz-coca-cola",
+      "quantity": 1
+     }
+    ]
+   },
+   {
+    "id": "combo-corn-cheese-fizz",
+    "name": "Corn Cheese Pataka + Fizz",
+    "category": "Combo Pataka",
+    "price": 7000,
+    "art": "corn",
+    "tint": "lime",
+    "active": true,
+    "soldOut": false,
+    "bundle": [
+     {
+      "productId": "corn-cheese-small",
+      "quantity": 1
+     },
+     {
+      "productId": "fizz-coca-cola",
+      "quantity": 1
+     }
+    ]
+   },
+   {
+    "id": "combo-veggie-pizza-fizz",
+    "name": "Veggie Pizza Pataka + Fizz",
+    "category": "Combo Pataka",
+    "price": 7000,
+    "art": "pizza",
+    "tint": "yellow",
+    "active": true,
+    "soldOut": false,
+    "bundle": [
+     {
+      "productId": "pizza-veggie",
+      "quantity": 1
+     },
+     {
+      "productId": "fizz-coca-cola",
+      "quantity": 1
+     }
+    ]
+   },
+   {
+    "id": "combo-corn-cheese-pizza-fizz",
+    "name": "Corn Cheese Pizza Pataka + Fizz",
+    "category": "Combo Pataka",
+    "price": 7000,
+    "art": "pizza",
+    "tint": "cream",
+    "active": true,
+    "soldOut": false,
+    "bundle": [
+     {
+      "productId": "pizza-corn-cheese",
+      "quantity": 1
+     },
+     {
+      "productId": "fizz-coca-cola",
+      "quantity": 1
+     }
+    ]
+   },
+   {
+    "id": "combo-chips-pizza-fizz",
+    "name": "Chips Pataka + Pizza + Fizz",
+    "category": "Combo Pataka",
+    "price": 7000,
+    "art": "packet",
+    "tint": "lime",
+    "active": true,
+    "soldOut": false,
+    "bundle": [
+     {
+      "productId": "veggie-small",
+      "quantity": 1
+     },
+     {
+      "productId": "pizza-veggie",
+      "quantity": 1
+     },
+     {
+      "productId": "fizz-coca-cola",
+      "quantity": 1
+     }
+    ]
+   }
+  ]
+ },
+ "live": {
+  "started": true,
+  "orders": [
+   {
+    "id": "order-0001",
+    "number": 1,
+    "at": "2026-11-04T10:00:00.000Z",
+    "operator": "Team Pataka",
+    "items": [
+     {
+      "id": "1fa2df6a-9824-4d2b-a1b8-152ce95430da",
+      "productId": "veggie-small",
+      "name": "Veggie Pataka · Small",
+      "category": "Crispy Dhamaka",
+      "size": "Small",
+      "flavour": "Lay’s Magic Masala",
+      "addons": [
+       {
+        "id": "cheese",
+        "name": "Cheese Sauce",
+        "price": 1000
+       }
+      ],
+      "quantity": 2,
+      "unitPrice": 4000,
+      "lineTotal": 8000,
+      "stock": {
+       "small": 1
+      },
+      "bundle": null
+     },
+     {
+      "id": "4f3c636b-6a0c-426d-b3ee-89fdedf5a91e",
+      "productId": "corn-large",
+      "name": "Corn Pataka · Large",
+      "category": "Crispy Dhamaka",
+      "size": "Large",
+      "flavour": "",
+      "addons": [],
+      "quantity": 1,
+      "unitPrice": 5000,
+      "lineTotal": 5000,
+      "stock": {
+       "large": 1
+      },
+      "bundle": null
+     },
+     {
+      "id": "8e5f2cfd-4012-4be2-b355-3b55122048f2",
+      "productId": "fizz-sprite",
+      "name": "Sprite",
+      "category": "Fizz Pataka",
+      "size": "",
+      "flavour": "",
+      "addons": [],
+      "quantity": 2,
+      "unitPrice": 2000,
+      "lineTotal": 4000,
+      "stock": {
+       "sprite": 1
+      },
+      "bundle": null
+     }
+    ],
+    "subtotal": 17000,
+    "discount": 1000,
+    "total": 16000,
+    "method": "UPI",
+    "status": "paid",
+    "cashReceived": null,
+    "change": 0
+   },
+   {
+    "id": "order-0002",
+    "number": 2,
+    "at": "2026-11-04T10:10:00.000Z",
+    "operator": "Team Pataka",
+    "items": [
+     {
+      "id": "2afc26b0-ed7c-4691-b5cc-f5707f846bba",
+      "productId": "combo-veggie-fizz",
+      "name": "Veggie Pataka + Fizz",
+      "category": "Combo Pataka",
+      "size": "",
+      "flavour": "",
+      "addons": [],
+      "quantity": 1,
+      "unitPrice": 7000,
+      "lineTotal": 7000,
+      "stock": {
+       "small": 1,
+       "cocaCola": 1
+      },
+      "bundle": [
+       {
+        "productId": "veggie-small",
+        "quantity": 1
+       },
+       {
+        "productId": "fizz-coca-cola",
+        "quantity": 1
+       }
+      ]
+     }
+    ],
+    "subtotal": 7000,
+    "discount": 0,
+    "total": 7000,
+    "method": "Cash",
+    "status": "paid",
+    "cashReceived": 10000,
+    "change": 3000
+   },
+   {
+    "id": "order-0003",
+    "number": 3,
+    "at": "2026-11-04T10:20:00.000Z",
+    "operator": "Team Pataka",
+    "items": [
+     {
+      "id": "56792d2e-46ae-4f1a-bf5b-4532dea2c69c",
+      "productId": "pizza-veggie",
+      "name": "Veggie Pizza Pataka",
+      "category": "Pizza Pataka",
+      "size": "",
+      "flavour": "",
+      "addons": [],
+      "quantity": 3,
+      "unitPrice": 3000,
+      "lineTotal": 9000,
+      "stock": {
+       "pizza": 1
+      },
+      "bundle": null
+     }
+    ],
+    "subtotal": 9000,
+    "discount": 0,
+    "total": 9000,
+    "method": "UPI",
+    "status": "pending",
+    "cashReceived": null,
+    "change": 0
+   },
+   {
+    "id": "order-0004",
+    "number": 4,
+    "at": "2026-11-04T10:30:00.000Z",
+    "operator": "Team Pataka",
+    "items": [
+     {
+      "id": "45c2050c-fe91-4225-95c0-6ee17c911d5f",
+      "productId": "peri-peri-large",
+      "name": "Peri Peri Pataka · Large",
+      "category": "Crispy Dhamaka",
+      "size": "Large",
+      "flavour": "",
+      "addons": [],
+      "quantity": 1,
+      "unitPrice": 5000,
+      "lineTotal": 5000,
+      "stock": {
+       "large": 1
+      },
+      "bundle": null
+     }
+    ],
+    "subtotal": 5000,
+    "discount": 0,
+    "total": 5000,
+    "method": "Cash",
+    "status": "partial",
+    "cashReceived": null,
+    "change": 0
+   },
+   {
+    "id": "order-0005",
+    "number": 5,
+    "at": "2026-11-04T10:50:00.000Z",
+    "operator": "Team Pataka",
+    "items": [
+     {
+      "id": "2be52692-5664-42b1-a90b-830160c1480a",
+      "productId": "fizz-fanta",
+      "name": "Fanta",
+      "category": "Fizz Pataka",
+      "size": "",
+      "flavour": "",
+      "addons": [],
+      "quantity": 1,
+      "unitPrice": 2000,
+      "lineTotal": 2000,
+      "stock": {
+       "fanta": 1
+      },
+      "bundle": null
+     }
+    ],
+    "subtotal": 2000,
+    "discount": 0,
+    "total": 2000,
+    "method": "Other",
+    "status": "void",
+    "cashReceived": null,
+    "change": 0
+   }
+  ],
+  "payments": [
+   {
+    "id": "23680149-c16b-4f27-bb51-95f99e6c6222",
+    "entityId": "order-0001",
+    "kind": "order",
+    "amount": 16000,
+    "method": "UPI",
+    "at": "2026-11-04T10:00:00.000Z"
+   },
+   {
+    "id": "6f6f312a-cadc-4d2e-8205-145f9fbb36bd",
+    "entityId": "order-0002",
+    "kind": "order",
+    "amount": 7000,
+    "method": "Cash",
+    "at": "2026-11-04T10:10:00.000Z"
+   },
+   {
+    "id": "1f399c66-bc49-423d-8b63-01eeaa33a425",
+    "entityId": "order-0004",
+    "kind": "order",
+    "amount": 5000,
+    "method": "Cash",
+    "at": "2026-11-04T10:30:00.000Z"
+   },
+   {
+    "id": "53c23835-bfdc-4026-96ff-5d510ed253a6",
+    "entityId": "order-0004",
+    "kind": "refund",
+    "amount": -2000,
+    "method": "Cash",
+    "at": "2026-11-04T10:40:00.000Z"
+   },
+   {
+    "id": "69997a12-ac5e-41b3-ad7d-379fa4fc679b",
+    "entityId": "order-0005",
+    "kind": "order",
+    "amount": 2000,
+    "method": "Other",
+    "at": "2026-11-04T10:50:00.000Z"
+   },
+   {
+    "id": "bd3f45e6-6bf4-47f1-8e0f-c741f160ecbc",
+    "entityId": "order-0005",
+    "kind": "refund",
+    "amount": -2000,
+    "method": "Other",
+    "at": "2026-11-04T11:00:00.000Z"
+   },
+   {
+    "id": "f00e2bdf-6657-4f8c-8889-446ee15dc331",
+    "entityId": "game-0001",
+    "kind": "game",
+    "amount": 2000,
+    "method": "Cash",
+    "at": "2026-11-04T11:10:00.000Z"
+   }
+  ],
+  "games": [
+   {
+    "id": "game-0001",
+    "gameId": "wheel",
+    "name": "Spin the Wheel",
+    "fee": 2000,
+    "prize": "Candy",
+    "method": "Cash",
+    "operator": "Team Pataka",
+    "at": "2026-11-04T11:10:00.000Z",
+    "void": false
+   },
+   {
+    "id": "game-0002",
+    "gameId": "coin",
+    "name": "Coin in the Bucket",
+    "fee": 0,
+    "prize": "",
+    "method": "Cash",
+    "operator": "Team Pataka",
+    "at": "2026-11-04T11:20:00.000Z",
+    "void": false
+   }
+  ],
+  "expenses": [
+   {
+    "id": "expense-0001",
+    "category": "Supplies",
+    "amount": 15000,
+    "description": "Extra plates",
+    "at": "2026-11-04T11:30:00.000Z",
+    "operator": "Team Pataka"
+   }
+  ],
+  "audit": [
+   {
+    "id": "5f52370e-01f2-4e2b-8ca3-202967675501",
+    "type": "order-created",
+    "entityId": "order-0001",
+    "operator": "Team Pataka",
+    "details": {
+     "status": "paid",
+     "total": 16000
+    },
+    "at": "2026-11-04T10:00:00.000Z"
+   },
+   {
+    "id": "dd68eb16-99d8-4c0e-8272-b772017f9fc1",
+    "type": "order-created",
+    "entityId": "order-0002",
+    "operator": "Team Pataka",
+    "details": {
+     "status": "paid",
+     "total": 7000
+    },
+    "at": "2026-11-04T10:10:00.000Z"
+   },
+   {
+    "id": "c037c333-36e7-4b28-9fa0-1cb2d72678dd",
+    "type": "order-created",
+    "entityId": "order-0003",
+    "operator": "Team Pataka",
+    "details": {
+     "status": "pending",
+     "total": 9000
+    },
+    "at": "2026-11-04T10:20:00.000Z"
+   },
+   {
+    "id": "339413d7-90eb-4d4b-95ea-1017942122c8",
+    "type": "order-created",
+    "entityId": "order-0004",
+    "operator": "Team Pataka",
+    "details": {
+     "status": "paid",
+     "total": 5000
+    },
+    "at": "2026-11-04T10:30:00.000Z"
+   },
+   {
+    "id": "cc16a2e5-4a68-416e-8865-05ed52b68f17",
+    "type": "refund",
+    "entityId": "order-0004",
+    "operator": "Team Pataka",
+    "details": {
+     "amount": 2000,
+     "reason": "Spilled half"
+    },
+    "at": "2026-11-04T10:40:00.000Z"
+   },
+   {
+    "id": "70d1a82e-092e-41a5-a195-5ff16cf0c1fd",
+    "type": "order-created",
+    "entityId": "order-0005",
+    "operator": "Team Pataka",
+    "details": {
+     "status": "paid",
+     "total": 2000
+    },
+    "at": "2026-11-04T10:50:00.000Z"
+   },
+   {
+    "id": "b99888d9-c9b1-4119-961a-821319c4e1ee",
+    "type": "void",
+    "entityId": "order-0005",
+    "operator": "Team Pataka",
+    "details": {
+     "amount": 2000,
+     "reason": "Duplicate tap"
+    },
+    "at": "2026-11-04T11:00:00.000Z"
+   },
+   {
+    "id": "abad3ae9-2c7a-44db-be64-7279713c7cba",
+    "type": "game-recorded",
+    "entityId": "game-0001",
+    "operator": "Team Pataka",
+    "details": {
+     "fee": 2000
+    },
+    "at": "2026-11-04T11:10:00.000Z"
+   },
+   {
+    "id": "8d32b25b-5bc0-4f6e-add2-cb0cd4366a5f",
+    "type": "game-recorded",
+    "entityId": "game-0002",
+    "operator": "Team Pataka",
+    "details": {
+     "fee": 0
+    },
+    "at": "2026-11-04T11:20:00.000Z"
+   }
+  ],
+  "milestones": {
+   "spark": {
+    "active": true,
+    "unlockedAt": "2026-11-04T10:00:00.000Z",
+    "reference": "order-0001",
+    "updatedAt": "2026-11-04T10:00:00.000Z"
+   },
+   "game": {
+    "active": true,
+    "unlockedAt": "2026-11-04T11:10:00.000Z",
+    "reference": "game-0001",
+    "updatedAt": "2026-11-04T11:10:00.000Z"
+   },
+   "crowd": {
+    "active": false,
+    "unlockedAt": null,
+    "reference": null,
+    "updatedAt": "2026-11-04T10:00:00.000Z"
+   },
+   "big": {
+    "active": false,
+    "unlockedAt": null,
+    "reference": null,
+    "updatedAt": "2026-11-04T10:00:00.000Z"
+   }
+  },
+  "draft": [
+   {
+    "id": "09eed295-a031-4e0f-9c69-38697285ad8a",
+    "productId": "corn-small",
+    "name": "Corn Pataka · Small",
+    "category": "Crispy Dhamaka",
+    "size": "Small",
+    "flavour": "",
+    "addons": [],
+    "quantity": 1,
+    "unitPrice": 3000,
+    "lineTotal": 3000,
+    "stock": {
+     "small": 1
+    },
+    "bundle": null
+   }
+  ],
+  "draftPromo": true,
+  "draftId": "8e7781ec-5ff5-4457-86a6-0c61d92ee979"
+ },
+ "demo": {
+  "started": false,
+  "orders": [
+   {
+    "id": "demo-0001",
+    "number": 1,
+    "at": "2026-11-04T11:40:00.000Z",
+    "operator": "Team Pataka",
+    "items": [
+     {
+      "id": "d75a3503-369f-45f3-a643-dc9b1f0108ab",
+      "productId": "fizz-coca-cola",
+      "name": "Coca-Cola",
+      "category": "Fizz Pataka",
+      "size": "",
+      "flavour": "",
+      "addons": [],
+      "quantity": 3,
+      "unitPrice": 2000,
+      "lineTotal": 6000,
+      "stock": {
+       "cocaCola": 1
+      },
+      "bundle": null
+     }
+    ],
+    "subtotal": 6000,
+    "discount": 0,
+    "total": 6000,
+    "method": "Cash",
+    "status": "paid",
+    "cashReceived": null,
+    "change": 0
+   }
+  ],
+  "payments": [
+   {
+    "id": "f75654ad-f66b-4b19-9836-ead598a9483f",
+    "entityId": "demo-0001",
+    "kind": "order",
+    "amount": 6000,
+    "method": "Cash",
+    "at": "2026-11-04T11:40:00.000Z"
+   }
+  ],
+  "games": [],
+  "expenses": [],
+  "audit": [
+   {
+    "id": "448d1eec-d19b-498b-9a34-9f35e8b0a8ae",
+    "type": "order-created",
+    "entityId": "demo-0001",
+    "operator": "Team Pataka",
+    "details": {
+     "status": "paid",
+     "total": 6000
+    },
+    "at": "2026-11-04T11:40:00.000Z"
+   }
+  ],
+  "milestones": {
+   "spark": {
+    "active": true,
+    "unlockedAt": "2026-11-04T11:40:00.000Z",
+    "reference": "demo-0001",
+    "updatedAt": "2026-11-04T11:40:00.000Z"
+   },
+   "game": {
+    "active": false,
+    "unlockedAt": null,
+    "reference": null,
+    "updatedAt": "2026-11-04T11:40:00.000Z"
+   },
+   "crowd": {
+    "active": false,
+    "unlockedAt": null,
+    "reference": null,
+    "updatedAt": "2026-11-04T11:40:00.000Z"
+   },
+   "big": {
+    "active": false,
+    "unlockedAt": null,
+    "reference": null,
+    "updatedAt": "2026-11-04T11:40:00.000Z"
+   }
+  },
+  "draft": [],
+  "draftPromo": false,
+  "draftId": "1b8ccfe8-3a07-48ec-a53d-65ee55975c94"
+ }
+}

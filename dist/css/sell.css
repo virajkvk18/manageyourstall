@@ -1,0 +1,1875 @@
+/* Sell screen (ARCHITECTURE.md §13.1 + §16.5/§16.6) — owned by the sell agent. Only .sell-* classes are styled here (plus the
+   sell-owned cart sheet via #sheet[data-kind="cart"]); base.css tokens and shared classes (button, .chip, .badge, .tag,
+   .price, .progress, .notice, .art-frame, .toggle, .tint-*, .pattern-*) are reused as-is.
+   Rush-hour first: big tap targets, high contrast, prices readable at arm's length in sunlight.
+   Spacing comes only from the scale tokens --sp-1 8 · --sp-2 12 · --sp-3 16 · --sp-4 24 · --sp-5 32 (fractions via calc()).
+   Breakpoints: desktop ≥1024px (sticky cart column) · tablet 768–1023px (2-col grid + cart drawer) · mobile ≤767px
+   (floating checkout bar + full-screen order sheet) · narrow ≤360px. */
+
+/* ------------------------------------------------------------------------------------------------------------------
+   Layout: products + sticky cart column (desktop) · single column + floating cart bar (tablet & phones)
+   ------------------------------------------------------------------------------------------------------------------ */
+.sell-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: var(--sp-4);
+  align-items: start;
+}
+.sell-main {
+  min-width: 0;
+}
+
+/* ------------------------------------------------------------------------------------------------------------------
+   Themed hero banner: heroTint background + heroPattern (faded in from the right) + hero illustration or stall photo
+   ------------------------------------------------------------------------------------------------------------------ */
+.sell-hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(200px, 36%);
+  align-items: center;
+  gap: var(--sp-3) var(--sp-4);
+  margin-bottom: var(--sp-3);
+  padding: var(--sp-4) var(--sp-4) var(--sp-4) var(--sp-5);
+  border: var(--line-thick);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  isolation: isolate;
+}
+.sell-hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  -webkit-mask-image: linear-gradient(90deg, transparent 28%, #000 72%);
+  mask-image: linear-gradient(90deg, transparent 28%, #000 72%);
+  pointer-events: none;
+}
+/* A thick secondary-colour stripe along the bottom edge: the theme's second colour, sticker style. */
+.sell-hero::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(var(--sp-1, 8px) * 0.75);
+  border-top: var(--line);
+  background: var(--sell-2, var(--pink));
+  z-index: -1;
+}
+.sell-hero-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-1);
+  min-width: 0;
+}
+.sell-hero-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-1);
+  max-width: 100%;
+  min-width: 0;
+}
+.sell-hero-name,
+.sell-hero-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--sp-1) / 2);
+  min-width: 0;
+  max-width: 100%;
+  min-height: 30px;
+  padding: calc(var(--sp-1) / 4) var(--sp-2);
+  border: var(--line);
+  border-radius: var(--r-pill);
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.1;
+  box-shadow: var(--shadow-sm);
+}
+.sell-hero-name > span,
+.sell-hero-chip > span,
+.sell-hero-chip {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sell-hero-name {
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.sell-hero-name .icon,
+.sell-hero-chip .icon {
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+}
+.sell-hero-chip {
+  background: var(--sell-2, var(--pink));
+  color: var(--sell-on-2, var(--ink));
+}
+.sell-hero-chip.is-event {
+  background: var(--paper-2);
+  color: var(--ink);
+}
+.sell-hero-copy > .sell-ready {
+  position: absolute;
+  top: var(--sp-3, 16px);
+  right: var(--sp-3, 16px);
+  z-index: 2;
+  flex-shrink: 0;
+  transform: rotate(3deg);
+}
+.sell-hero h1 {
+  margin-top: calc(var(--sp-1) / 2);
+  font-size: 38px;
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+.sell-hero-sub {
+  max-width: 56ch;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: #3d3a33;
+  overflow-wrap: anywhere;
+}
+.sell-hero-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-1);
+}
+button.sell-hero-cta {
+  gap: var(--sp-1);
+  min-height: 48px;
+  padding: 0 var(--sp-3);
+  border: var(--line-thick);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 15px;
+  font-weight: 900;
+  box-shadow: var(--shadow);
+  white-space: nowrap;
+}
+button.sell-hero-cta .icon {
+  stroke-width: 2.4;
+}
+.sell-hero-tools button.toggle {
+  min-height: 48px;
+  padding: 0 var(--sp-2) 0 calc(var(--sp-1) / 2 + calc(var(--sp-1) / 4));
+  border: var(--line);
+  border-radius: var(--r-pill);
+  background: var(--paper-2);
+  box-shadow: var(--shadow-sm);
+}
+.sell-ready {
+  min-height: 32px;
+  transform: rotate(-2deg);
+  box-shadow: var(--shadow-sm);
+}
+.sell-hero-art {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  align-self: stretch;
+}
+.sell-hero-blob {
+  position: absolute;
+  inset: 4% 6% -2%;
+  border: var(--line);
+  border-radius: 50%;
+  background: var(--sell-2, var(--pink));
+  box-shadow: var(--shadow);
+  transform: rotate(-6deg);
+}
+.sell-hero-frame {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  aspect-ratio: 360 / 160;
+}
+.sell-hero-svg {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.sell-hero-art.has-photo .sell-hero-frame {
+  max-width: 260px;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border: var(--line-thick);
+  border-radius: var(--r);
+  background: var(--paper-2);
+  box-shadow: var(--shadow);
+  transform: rotate(2deg);
+}
+.sell-hero-img {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  background: var(--paper-2);
+}
+
+/* ------------------------------------------------------------------------------------------------------------------
+   Mission strip
+   ------------------------------------------------------------------------------------------------------------------ */
+.sell-mission {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--sp-1) var(--sp-3);
+  width: 100%;
+  min-height: 58px;
+  margin-bottom: var(--sp-2);
+  padding: var(--sp-1) var(--sp-2) var(--sp-1) var(--sp-3);
+  border: var(--line);
+  border-radius: var(--r);
+  background: var(--paper-2);
+  box-shadow: var(--shadow-sm);
+  text-align: left;
+  font-size: 14px;
+  font-weight: 600;
+}
+.sell-mission-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 0 1 auto;
+  line-height: 1.3;
+}
+.sell-mission-copy strong {
+  font-weight: 900;
+}
+.sell-mission-copy .eyebrow {
+  color: var(--muted);
+  font-size: 10.5px;
+}
+.sell-mission-bar {
+  display: block;
+  flex: 1 1 140px;
+  min-width: 90px;
+  height: 16px;
+}
+.sell-mission-bar .progress-fill {
+  display: block;
+}
+.sell-mission-pct {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+.sell-mission-go {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.sell-mission-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border: var(--line);
+  border-radius: 50%;
+  background: var(--paper-2);
+}
+.sell-mission.is-unset {
+  flex-wrap: wrap;
+  border-style: dashed;
+  background: var(--yellow-soft);
+  box-shadow: none;
+}
+.sell-mission.is-unset .sell-mission-copy {
+  display: block;
+  flex: 1 1 220px;
+}
+.sell-mission.is-profit {
+  background-color: var(--lime);
+  background-image: repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.35) 0 10px, transparent 10px 20px);
+  box-shadow: var(--shadow);
+}
+.sell-profit-badge {
+  flex-shrink: 0;
+  padding: calc(var(--sp-1) / 2) var(--sp-1);
+  border: var(--line);
+  border-radius: 8px;
+  background: var(--ink);
+  color: var(--yellow);
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  transform: rotate(-3deg);
+  box-shadow: 2px 2px 0 var(--pink);
+}
+.sell-mission-big {
+  font-family: var(--font-display);
+  font-size: 20px;
+}
+.sell-mission-small {
+  font-size: 12px;
+  font-weight: 700;
+  color: #3d3a33;
+}
+
+/* ------------------------------------------------------------------------------------------------------------------
+   Banners
+   ------------------------------------------------------------------------------------------------------------------ */
+.sell-setup,
+.sell-quick-banner {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-1) var(--sp-2);
+  margin-bottom: var(--sp-2);
+}
+.sell-setup .grow,
+.sell-quick-banner .grow {
+  flex: 1 1 220px;
+}
+.sell-setup .grow span,
+.sell-quick-banner .grow span {
+  display: block;
+  font-size: 13px;
+}
+.sell-setup > button,
+.sell-quick-banner > button {
+  flex-shrink: 0;
+}
+
+/* ------------------------------------------------------------------------------------------------------------------
+   Toolbar: search + filter chips
+   ------------------------------------------------------------------------------------------------------------------ */
+.sell-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: calc(var(--sp-1) / 2) 0 calc(var(--sp-1) / 2);
+}
+.sell-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1 1 260px;
+  max-width: 420px;
+  min-width: 0;
+}
+.sell-search input {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  padding: var(--sp-1) 46px var(--sp-1) 44px; /* side gutters clear the search icon and the / hint */
+  border: var(--line);
+  border-radius: var(--r-pill);
+  background: var(--paper-2);
+  box-shadow: var(--shadow-sm);
+  font-size: 16px;
+  font-weight: 600;
+  appearance: none;
+}
+.sell-search input::-webkit-search-cancel-button,
+.sell-search input::-webkit-search-decoration {
+  appearance: none;
+}
+.sell-search input::placeholder {
+  color: #8d877a;
+}
+.sell-search input:focus {
+  background: #fff;
+  box-shadow: 3px 3px 0 var(--accent);
+}
+.sell-search-icon {
+  position: absolute;
+  left: 15px;
+  pointer-events: none;
+}
+.sell-search .sell-search-clear {
+  position: absolute;
+  right: 3px;
+  border-radius: 50%;
+}
+.sell-kbd {
+  position: absolute;
+  right: 14px;
+  display: grid;
+  place-items: center;
+  min-width: 24px;
+  height: 24px;
+  border: 2px solid rgba(23, 23, 23, 0.35);
+  border-radius: 6px;
+  color: var(--muted);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 800;
+  pointer-events: none;
+}
+.sell-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+  flex: 1 1 100%;
+  min-width: 0;
+}
+.sell-chip-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 calc(var(--sp-1) / 2);
+  border-radius: var(--r-pill);
+  background: rgba(23, 23, 23, 0.1);
+  font-size: 11.5px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+.sell-chip.active .sell-chip-count {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+button.sell-chip-games {
+  background: var(--lavender-soft);
+}
+
+/* ------------------------------------------------------------------------------------------------------------------
+   Sections & grid
+   ------------------------------------------------------------------------------------------------------------------ */
+.sell-products {
+  min-width: 0;
+}
+.sell-section {
+  margin-top: var(--sp-4);
+}
+.sell-section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-2);
+  font-size: 22px;
+  overflow-wrap: anywhere;
+}
+.sell-section-title::before {
+  content: '';
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  border: var(--line);
+  border-radius: 4px;
+  background: var(--accent);
+  transform: rotate(45deg);
+}
+.sell-section-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 28px;
+  height: 26px;
+  padding: 0 var(--sp-1);
+  border: var(--line);
+  border-radius: var(--r-pill);
+  background: var(--paper-2);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+.sell-results {
+  margin: var(--sp-3) 0 var(--sp-2);
+  font-size: 14px;
+  font-weight: 800;
+  color: #3d3a33;
+}
+.sell-products > .empty-state {
+  margin-top: var(--sp-3);
+}
+.sell-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(176px, 1fr));
+  gap: var(--sp-3);
+}
+
+/* ------------------------------------------------------------------------------------------------------------------
+   Product card: <article> + a main button stretched over the card; stepper/tools sit above it
+   ------------------------------------------------------------------------------------------------------------------ */
+.sell-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border: var(--line);
+  border-radius: var(--r-lg);
+  background: var(--paper-2);
+  box-shadow: var(--shadow);
+  transition: transform 0.08s ease, box-shadow 0.08s ease, background-color 0.12s ease;
+}
+@media (hover: hover) {
+  .sell-card:has(.sell-card-main:hover) {
+    transform: translate(-1px, -1px);
+    box-shadow: 5px 5px 0 var(--ink);
+  }
+}
+.sell-card:has(.sell-card-main:active) {
+  transform: translate(3px, 3px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+.sell-card.in-cart {
+  background: var(--lime-soft);
+}
+.sell-card-media {
+  position: relative;
+  padding: var(--sp-1) var(--sp-1) 0;
+}
+.sell-card-art.art-frame {
+  border-radius: 11px;
+}
+.sell-card-tags {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--sp-1) / 2);
+  max-width: calc(100% - 64px);
+  pointer-events: none;
+}
+.sell-qty-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: grid;
+  place-items: center;
+  min-width: 38px;
+  height: 38px;
+  padding: 0 calc(var(--sp-1) / 2);
+  border: var(--line);
+  border-radius: var(--r-pill);
+  background: var(--pink);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  box-shadow: var(--shadow-sm);
+  transform: translate(6px, -8px) rotate(6deg);
+  z-index: 1;
+}
+.sell-ribbon {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  top: 52%;
+  display: grid;
+  justify-items: center;
+  padding: calc(var(--sp-1) / 2) calc(var(--sp-1) / 2);
+  border: var(--line);
+  background: var(--coral);
+  color: var(--ink);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-50%) rotate(-6deg);
+  text-align: center;
+  pointer-events: none;
+}
+.sell-ribbon b {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  line-height: 1.1;
+}
+.sell-ribbon small {
+  font-size: 10.5px;
+  font-weight: 800;
+}
+.sell-low.is-capped {
+  background: var(--yellow);
+}
+.sell-low {
+  position: absolute;
+  left: 15px;
+  bottom: 7px;
+  padding: calc(var(--sp-1) / 4) var(--sp-1);
+  border: var(--line);
+  border-radius: var(--r-pill);
+  background: var(--orange);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-shadow: var(--shadow-sm);
+}
+.sell-card-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: calc(var(--sp-1) / 2);
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: var(--sp-1) var(--sp-2) var(--sp-2);
+}
+.sell-card-name {
+  font-family: var(--font-display);
+  font-size: 16.5px;
+  font-weight: 900;
+  line-height: 1.18;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+button.sell-card-main {
+  display: inline;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  box-shadow: none !important;
+  transform: none !important;
+  user-select: none;
+}
+button.sell-card-main::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: var(--r-lg);
+}
+button.sell-card-main:focus-visible {
+  outline: none;
+}
+button.sell-card-main:focus-visible::after {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+.sell-size {
+  display: inline-block;
+  padding: 1px var(--sp-1);
+  border: 2px solid var(--ink);
+  border-radius: var(--r-pill);
+  background: var(--cream);
+  font-size: 10.5px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1.5;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.sell-card-sub {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--muted);
+}
+.sell-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-1);
+  width: 100%;
+  margin-top: auto;
+  padding-top: calc(var(--sp-1) / 2);
+}
+.sell-price {
+  font-size: 23px;
+}
+.sell-add-hint {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border: var(--line);
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: var(--shadow-sm);
+}
+.sell-add-hint .icon {
+  stroke-width: 2.6;
+}
+.sell-setprice {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--sp-1) / 2);
+  padding: calc(var(--sp-1) / 2) var(--sp-1);
+  border: 2px dashed var(--ink);
+  border-radius: 8px;
+  background: repeating-linear-gradient(-45deg, var(--yellow-soft) 0 6px, var(--paper-2) 6px 12px);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+.sell-setprice .icon {
+  width: 15px;
+  height: 15px;
+  stroke-width: 2.4;
+}
+.sell-card.is-unpriced {
+  border-style: dashed;
+  box-shadow: var(--shadow-sm);
+}
+.sell-card.is-unpriced .sell-card-art .food-art {
+  opacity: 0.55;
+  filter: grayscale(0.7);
+}
+.sell-card.is-out {
+  box-shadow: var(--shadow-sm);
+  background: #f4efe4;
+}
+.sell-card.is-out .sell-card-art {
+  filter: grayscale(1);
+  opacity: 0.6;
+}
+.sell-card.is-out .sell-price {
+  color: var(--muted);
+  text-decoration: line-through 3px;
+}
+
+/* In-cart stepper and quick-edit tools sit above the stretched main button. */
+.sell-card-stepper,
+.sell-tools {
+  position: relative;
+  z-index: 2;
+}
+.sell-card-stepper {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: calc(var(--sp-1) / 2);
+  margin: calc((var(--sp-1) / 4) * -1) var(--sp-1) var(--sp-1);
+}
+.sell-card-stepper .sell-step-qty small {
+  display: block;
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #3d3a33;
+}
+button.sell-step {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 10px;
+}
+button.sell-step .icon {
+  stroke-width: 2.7;
+}
+button.sell-step[data-action$='inc'] {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.sell-step-qty {
+  min-width: 30px;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 900;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+.sell-tools {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: calc(var(--sp-1) / 2);
+  padding: 0 var(--sp-1) var(--sp-1);
+}
+button.sell-tool {
+  min-height: 40px;
+  min-width: 0;
+  padding: calc(var(--sp-1) / 2) var(--sp-1);
+  gap: calc(var(--sp-1) / 2);
+  font-size: 12.5px;
+}
+button.sell-tool .icon {
+  width: 16px;
+  height: 16px;
+}
+button.sell-tool-stock {
+  grid-column: 1 / -1;
+  background: var(--mint);
+}
+button.sell-tool-stock.is-soldout {
+  background: var(--coral);
+}
+@media (pointer: coarse) {
+  button.sell-tool {
+    min-height: 44px;
+  }
+}
+
+/* ------------------------------------------------------------------------------------------------------------------
+   Cart panel (≥761px)
+   ------------------------------------------------------------------------------------------------------------------ */
+.sell-cart-panel {
+  position: sticky;
+  top: 16px;
+  display: flex;
+  flex-direction: column;
+  /* Fits below the topbar at scroll 0 too, so "Review & pay" is never below the fold. */
+  max-height: calc(100dvh - 140px);
+  min-width: 0;
+  border: var(--line-thick);
+  border-radius: var(--r-lg);
+  background: var(--paper-2);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+.is-demo .sell-cart-panel {
+  top: calc(var(--demo-h) + 16px);
+  max-height: calc(100dvh - var(--demo-h) - 140px);
+}
+.sell-cart-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  flex-shrink: 0;
+  padding: var(--sp-2) var(--sp-1) var(--sp-2) var(--sp-3);
+  border-bottom: var(--line-thick);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.sell-cart-head h2 {
+  font-size: 21px;
+}
+.sell-cart-sub {
+  display: block;
+  margin-top: calc(var(--sp-1) / 4);
+  font-size: 12px;
+  font-weight: 800;
+  opacity: 0.85;
+}
+.sell-cart-head button.sell-clear {
+  color: inherit;
+}
+.sell-cart-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: calc(var(--sp-1) / 4) var(--sp-3) var(--sp-2);
+}
+.sell-cart-foot {
+  flex-shrink: 0;
+  padding: var(--sp-2) var(--sp-3) var(--sp-2);
+  border-top: var(--line-thick);
+  background: var(--paper);
+}
+.sell-kbd-hint {
+  margin-top: var(--sp-1);
+  text-align: center;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--muted);
+}
+@media (pointer: coarse) {
+  .sell-kbd-hint {
+    display: none;
+  }
+}
+button.sell-pay {
+  gap: var(--sp-1);
+}
+.sell-pay-amt {
+  margin-left: auto;
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+.sell-pay .icon {
+  stroke-width: 2.6;
+}
+
+/* Lines */
+.sell-lines {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.sell-line {
+  padding: var(--sp-2) 0;
+  border-bottom: var(--line-soft);
+}
+.sell-line-top {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-1);
+}
+.sell-line-name {
+  display: block;
+  font-size: 14.5px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.sell-line-detail,
+.sell-line-note,
+.sell-line-unit {
+  display: block;
+  margin-top: calc(var(--sp-1) / 4);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.sell-line-detail {
+  color: #3d3a33;
+  font-weight: 700;
+}
+.sell-line-note {
+  display: flex;
+  gap: calc(var(--sp-1) / 2);
+  align-items: flex-start;
+  color: var(--ink);
+  font-weight: 700;
+}
+.sell-line-note .icon {
+  width: 14px;
+  height: 14px;
+  margin-top: 1px;
+}
+.sell-line-total {
+  flex-shrink: 0;
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.sell-line-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-1);
+  margin-top: var(--sp-1);
+}
+.sell-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--sp-1) / 2);
+}
+.sell-line.is-blocked .sell-line-name,
+.sell-line.is-blocked .sell-line-total {
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+}
+.sell-line-blocked {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--sp-1) / 2);
+  margin-top: calc(var(--sp-1) / 2);
+  padding: calc(var(--sp-1) / 4) var(--sp-1);
+  border: var(--line);
+  border-radius: var(--r-pill);
+  background: var(--coral-soft);
+  color: var(--danger-ink);
+  font-size: 12px;
+  font-weight: 800;
+}
+.sell-line-blocked .icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+button.sell-remove {
+  color: var(--danger-ink);
+  padding-left: var(--sp-1);
+  padding-right: var(--sp-1);
+}
+
+/* Note */
+.sell-note {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-1);
+  margin-top: var(--sp-2);
+  padding: calc(var(--sp-1) / 2) calc(var(--sp-1) / 2) calc(var(--sp-1) / 2) var(--sp-2);
+  border: 2px dashed var(--ink);
+  border-radius: 10px;
+  background: var(--yellow-soft);
+}
+.sell-note-text {
+  display: flex;
+  align-items: flex-start;
+  gap: calc(var(--sp-1) / 2);
+  min-width: 0;
+  padding-top: var(--sp-1);
+  font-size: 13.5px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.sell-note-text .icon {
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+}
+button.sell-note-add {
+  margin-top: var(--sp-1);
+  padding-left: calc(var(--sp-1) / 2);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+.sell-note-intro {
+  margin-bottom: var(--sp-2);
+  font-size: 14px;
+}
+
+/* Totals */
+.sell-totals {
+  margin-top: var(--sp-2);
+  padding-top: var(--sp-1);
+  border-top: var(--line);
+}
+.sell-total-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-1);
+  padding: calc(var(--sp-1) / 4) 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+.sell-total-row strong {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.sell-total-row.is-discount {
+  color: var(--ok);
+}
+.sell-total-row.is-discount span {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--sp-1) / 2);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.sell-total-row.is-discount .icon {
+  width: 15px;
+  height: 15px;
+}
+.sell-total-row.is-total {
+  padding-top: calc(var(--sp-1) / 2);
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 900;
+}
+.sell-total-row.is-total strong {
+  font-size: 28px;
+}
+.sell-total-hint {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--warn);
+}
+
+/* Empty cart */
+.sell-cart-empty {
+  display: grid;
+  justify-items: center;
+  gap: calc(var(--sp-1) / 2);
+  padding: var(--sp-4) var(--sp-1) var(--sp-3);
+  text-align: center;
+}
+.sell-cart-empty-icon {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  margin-bottom: calc(var(--sp-1) / 2);
+  border: 2px dashed rgba(23, 23, 23, 0.45);
+  border-radius: 50%;
+  color: var(--muted);
+  transform: rotate(-8deg);
+}
+.sell-cart-empty-icon .icon {
+  width: 28px;
+  height: 28px;
+}
+.sell-cart-empty strong {
+  font-family: var(--font-display);
+  font-size: 18px;
+}
+.sell-cart-empty p {
+  font-size: 13.5px;
+  color: var(--muted);
+}
+.sell-cart-empty .sell-note-text {
+  padding: 0;
+  color: var(--ink);
+}
+
+/* Cart sheet (phones) */
+.sell-cart-sheet .sell-cart-empty {
+  padding-top: var(--sp-3);
+}
+button.sell-sheet-pay {
+  flex: 2 1 180px;
+}
+button.sell-sheet-clear {
+  flex: 0 1 110px;
+  color: var(--danger-ink);
+}
+
+/* ------------------------------------------------------------------------------------------------------------------
+   Customize sheet
+   ------------------------------------------------------------------------------------------------------------------ */
+.sell-cz-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+  padding-bottom: var(--sp-2);
+  border-bottom: var(--line-soft);
+}
+.sell-cz-name {
+  font-family: var(--font-display);
+  font-size: 19px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.sell-cz-item small {
+  display: block;
+  margin-top: calc(var(--sp-1) / 4);
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.sell-cz-base {
+  flex-shrink: 0;
+  font-size: 21px;
+}
+.sell-cz-group {
+  min-width: 0;
+  margin: 0 0 var(--sp-3);
+  padding: 0;
+  border: 0;
+}
+.sell-cz-group legend {
+  margin-bottom: var(--sp-1);
+  padding: 0;
+}
+.sell-cz-group legend .muted {
+  font-weight: 600;
+}
+.sell-cz-addons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+}
+button.sell-cz-addon {
+  min-height: 44px;
+}
+.sell-cz-addon-price {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.8;
+}
+button.sell-cz-addon.active .icon {
+  transform: rotate(45deg);
+}
+.sell-cz-qty {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-2);
+}
+.sell-stepper.is-big {
+  gap: var(--sp-1);
+}
+.sell-stepper.is-big button.sell-step {
+  width: 50px;
+  min-width: 50px;
+  height: 50px;
+}
+.sell-stepper.is-big .sell-step-qty {
+  min-width: 44px;
+  font-size: 26px;
+}
+.sell-cz-live {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-1);
+  padding: var(--sp-2) var(--sp-2);
+  border: var(--line);
+  border-radius: var(--r);
+  background: var(--yellow-soft);
+  font-size: 14px;
+  font-weight: 700;
+}
+.sell-cz-live:empty {
+  display: none;
+}
+.sell-cz-live strong {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+button.sell-cz-submit {
+  flex: 2 1 180px;
+}
+
+
+/* ------------------------------------------------------------------------------------------------------------------
+   Cart sheet (sheet kind 'cart'): slide-over drawer on tablets, full-screen order sheet on phones
+   ------------------------------------------------------------------------------------------------------------------ */
+.sell-sheet-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-1);
+  margin-bottom: calc(var(--sp-1) / 2);
+}
+.sell-sheet-token {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--sp-1) / 2);
+  font-size: 13px;
+  font-weight: 800;
+  color: #3d3a33;
+}
+.sell-sheet-token .icon {
+  width: 17px;
+  height: 17px;
+}
+.sell-cart-sheet .sell-cart-empty {
+  padding-top: var(--sp-3);
+}
+button.sell-sheet-pay {
+  flex: 2 1 180px;
+}
+button.sell-sheet-clear {
+  flex: 0 1 110px;
+  color: var(--danger-ink);
+}
+
+/* ------------------------------------------------------------------------------------------------------------------
+   Floating cart bar (tablet + phones): "N items · ₹Total · Review & Pay →"
+   ------------------------------------------------------------------------------------------------------------------ */
+.sell-cartbar,
+.sell-cart-spacer {
+  display: none;
+}
+.sell-cartbar-dot {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Keep the pay labels on one line; the amount shrinks first on tiny phones. */
+button.sell-pay > span,
+button.sell-cartbar-pay {
+  white-space: nowrap;
+}
+
+/* Add feedback (animations are switched off globally under prefers-reduced-motion) */
+.sell-bump .sell-cart-head,
+.sell-cartbar.sell-bump {
+  animation: sell-bump 0.34s ease-out;
+}
+.sell-pop .sell-qty-badge {
+  animation: sell-pop 0.36s ease-out;
+}
+@keyframes sell-bump {
+  40% {
+    filter: brightness(1.12);
+    transform: scale(1.03);
+  }
+}
+@keyframes sell-pop {
+  0% {
+    transform: translate(6px, -8px) rotate(6deg) scale(0.4);
+  }
+  60% {
+    transform: translate(6px, -8px) rotate(-4deg) scale(1.25);
+  }
+}
+@keyframes sell-drawer-in {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes sell-sheet-up {
+  from {
+    transform: translateY(40px);
+    opacity: 0.4;
+  }
+}
+
+/* ------------------------------------------------------------------------------------------------------------------
+   Responsive
+   ------------------------------------------------------------------------------------------------------------------ */
+@media (min-width: 1500px) {
+  .sell-layout {
+    grid-template-columns: minmax(0, 1fr) 370px;
+  }
+  .sell-grid {
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  }
+}
+
+/* Desktop, small: a slimmer cart column keeps two product columns beside the full sidebar. */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .sell-layout {
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: var(--sp-3);
+  }
+  .sell-hero {
+    grid-template-columns: minmax(0, 1fr) 156px;
+    padding: var(--sp-3) var(--sp-4) var(--sp-4);
+  }
+  .sell-hero h1 {
+    font-size: 30px;
+  }
+  .sell-hero-frame {
+    max-width: 156px;
+  }
+  .sell-hero-art.has-photo .sell-hero-frame {
+    width: 136px;
+  }
+  .sell-grid {
+    grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+    gap: var(--sp-3);
+  }
+  .sell-cart-scroll {
+    padding-left: var(--sp-2);
+    padding-right: var(--sp-2);
+  }
+}
+
+/* Compact hero (phones + small desktops): chips/badge row, tagline + art, tools row — one tidy grid. */
+@media (max-width: 767px), (min-width: 1024px) and (max-width: 1279px) {
+  .sell-hero {
+    grid-template-areas:
+      'chips badge'
+      'title art'
+      'sub art'
+      'tools tools';
+    align-items: center;
+  }
+  .sell-hero-copy {
+    display: contents;
+  }
+  .sell-hero-chips {
+    grid-area: chips;
+    flex-wrap: nowrap;
+  }
+  .sell-hero-copy > .sell-ready {
+    grid-area: badge;
+    position: static;
+    justify-self: end;
+    transform: rotate(-2deg);
+  }
+  .sell-hero h1 {
+    grid-area: title;
+    align-self: end;
+    margin: 0;
+  }
+  .sell-hero-sub {
+    grid-area: sub;
+    align-self: start;
+  }
+  .sell-hero-art {
+    grid-area: art;
+    align-self: center;
+  }
+  .sell-hero-tools {
+    grid-area: tools;
+  }
+  .sell-hero-name {
+    flex: 0 1 auto;
+  }
+  /* Booth + event already sit in the topbar; the compact hero keeps just the stall name chip. */
+  .sell-hero-chip {
+    display: none;
+  }
+  .sell-hero-sub {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+}
+
+/* Tablet + phones: one column; the cart lives in the floating bar → drawer / full-screen sheet. */
+@media (max-width: 1023px) {
+  .sell-layout {
+    display: block;
+  }
+  .sell-cart-panel {
+    display: none;
+  }
+  .sell-cart-spacer {
+    display: block;
+    height: calc(var(--sp-5, 32px) * 3);
+  }
+  .sell-cartbar {
+    position: fixed;
+    right: var(--gutter, 16px);
+    bottom: calc(var(--bottom-nav-h, 0px) + env(safe-area-inset-bottom) + var(--sp-3, 16px));
+    z-index: 35;
+    display: flex;
+    align-items: center;
+    gap: var(--sp-1);
+    width: min(540px, calc(100% - 2 * var(--gutter, 16px)));
+    padding: var(--sp-1);
+    border: var(--line-thick);
+    border-radius: var(--r-lg);
+    background: var(--ink);
+    color: var(--paper);
+    box-shadow: 4px 4px 0 var(--pink);
+  }
+  /* Keep toasts above the floating cart bar so Review & Pay stays tappable. */
+  body:has(.sell-cartbar) {
+    --toast-lift: 88px;
+  }
+  button.sell-cartbar-open {
+    flex: 1 1 auto;
+    justify-content: flex-start;
+    gap: var(--sp-1);
+    min-width: 0;
+    min-height: 52px;
+    padding: 0 var(--sp-1);
+    border-color: transparent;
+    background: transparent;
+    color: var(--paper);
+    box-shadow: none;
+    font-family: var(--font-display);
+    font-size: 19px;
+    font-weight: 900;
+    text-align: left;
+    font-variant-numeric: tabular-nums;
+  }
+  button.sell-cartbar-open:focus-visible {
+    outline-color: var(--yellow);
+  }
+  .sell-cartbar-icon {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    color: var(--yellow);
+  }
+  .sell-cartbar-sum {
+    min-width: 0;
+    line-height: 1.1;
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-decoration-color: rgba(255, 249, 237, 0.35);
+    text-underline-offset: 4px;
+  }
+  button.sell-cartbar-pay {
+    flex-shrink: 0;
+    min-height: 52px;
+    padding: 0 var(--sp-3);
+    border-color: var(--paper);
+    box-shadow: 3px 3px 0 var(--paper);
+    font-size: 16px;
+    font-weight: 900;
+  }
+  button.sell-cartbar-pay:active {
+    box-shadow: none;
+  }
+}
+
+/* Tablet: 2-column product grid, compact hero, cart as a slide-over drawer from the right. */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .sell-hero {
+    grid-template-columns: minmax(0, 1fr) minmax(170px, 34%);
+    padding: var(--sp-4);
+  }
+  .sell-hero h1 {
+    font-size: 32px;
+  }
+  .sell-hero-sub {
+    font-size: 14px;
+  }
+  .sell-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--sp-3);
+  }
+  .sell-card-art.art-frame.size-md {
+    aspect-ratio: 2 / 1;
+  }
+  #sheet[data-kind='cart'] {
+    width: min(440px, 92vw);
+    max-width: none;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0 0 0 auto;
+    border: 0;
+    border-left: var(--line-thick);
+    border-radius: 0;
+    box-shadow: -6px 0 0 var(--ink);
+  }
+  #sheet[data-kind='cart'][open] {
+    animation: sell-drawer-in 0.22s ease-out;
+  }
+  #sheet[data-kind='cart'] .sheet-grip {
+    display: none;
+  }
+  #sheet[data-kind='cart'] .sheet-head {
+    border-radius: 0;
+  }
+}
+
+/* Phones */
+@media (max-width: 767px) {
+  .sell-hero {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: calc(var(--sp-1) / 2) var(--sp-2);
+    margin-bottom: var(--sp-2);
+    padding: var(--sp-2) var(--sp-2) calc(var(--sp-2) + calc(var(--sp-1) / 2));
+  }
+  .sell-hero-bg {
+    -webkit-mask-image: linear-gradient(90deg, transparent 35%, #000 85%);
+    mask-image: linear-gradient(90deg, transparent 35%, #000 85%);
+  }
+  .sell-hero-chips {
+    margin-bottom: calc(var(--sp-1) / 2);
+  }
+  .sell-hero-chip {
+    display: none;
+  }
+  .sell-hero-name,
+  .sell-hero-chip {
+    min-height: 26px;
+    padding: 0 var(--sp-1);
+    font-size: 11px;
+    box-shadow: none;
+  }
+  .sell-hero-name {
+    font-size: 11.5px;
+  }
+  .sell-hero-copy > .sell-ready {
+    min-height: 26px;
+    margin-bottom: calc(var(--sp-1) / 2);
+    padding: 0 var(--sp-1);
+  }
+  .sell-hero h1 {
+    font-size: 22px;
+    line-height: 1.08;
+  }
+  .sell-hero-sub {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+    overflow: hidden;
+    font-size: 12.5px;
+    line-height: 1.4;
+  }
+  .sell-hero-art {
+    justify-self: end;
+  }
+  .sell-hero-frame {
+    width: 104px;
+  }
+  .sell-hero-art.has-photo .sell-hero-frame {
+    width: 92px;
+    border-width: 2px;
+    box-shadow: var(--shadow-sm);
+  }
+  .sell-hero-blob {
+    box-shadow: var(--shadow-sm);
+  }
+  .sell-hero-tools {
+    flex-wrap: nowrap;
+    gap: var(--sp-1);
+    margin-top: var(--sp-1);
+  }
+  button.sell-hero-cta {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 44px;
+    padding: 0 var(--sp-2);
+    font-size: 14px;
+    box-shadow: var(--shadow-sm);
+  }
+  .sell-hero-tools button.toggle {
+    flex-shrink: 0;
+    min-height: 44px;
+    gap: var(--sp-1);
+    font-size: 13px;
+  }
+  .sell-hero::after {
+    height: calc(var(--sp-1, 8px) / 2 + 2px);
+  }
+
+  .sell-setup {
+    flex-wrap: nowrap;
+    padding: var(--sp-1) var(--sp-1) var(--sp-1) var(--sp-2);
+  }
+  .sell-setup .grow {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .sell-setup .grow .sell-banner-more {
+    display: none;
+  }
+  .sell-quick-banner {
+    padding: var(--sp-1) var(--sp-1) var(--sp-1) var(--sp-2);
+  }
+  .sell-mission {
+    flex-wrap: wrap;
+    gap: var(--sp-1) var(--sp-2);
+    margin-bottom: var(--sp-2);
+    padding: var(--sp-1) var(--sp-2);
+  }
+  .sell-mission:not(.is-unset):not(.is-profit) .sell-mission-copy {
+    flex: 1 1 auto;
+  }
+  .sell-mission-bar {
+    order: 5;
+    flex-basis: 100%;
+    height: 14px;
+  }
+  .sell-mission-pct {
+    font-size: 20px;
+  }
+  .sell-mission.is-profit .sell-mission-copy {
+    flex: 1 1 150px;
+  }
+  .sell-mission.is-unset {
+    flex-wrap: nowrap;
+  }
+  .sell-mission.is-unset .sell-mission-icon,
+  .sell-mission.is-unset .sell-mission-copy .muted {
+    display: none;
+  }
+  .sell-mission.is-unset .sell-mission-copy {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .sell-mission.is-unset > button {
+    flex-shrink: 0;
+  }
+  .sell-search {
+    max-width: none;
+    flex-basis: 100%;
+  }
+  .sell-kbd {
+    display: none;
+  }
+  .sell-chips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin: 0 calc(-1 * var(--gutter));
+    padding: calc(var(--sp-1) / 4) var(--gutter) var(--sp-1);
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+  }
+  .sell-chips::-webkit-scrollbar {
+    display: none;
+  }
+  .sell-chips > button {
+    flex-shrink: 0;
+  }
+  .sell-section {
+    margin-top: var(--sp-3);
+  }
+  .sell-section-title {
+    font-size: 19px;
+    margin-bottom: var(--sp-2);
+  }
+  .sell-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--sp-2);
+  }
+  .sell-card-media {
+    padding: calc(var(--sp-1) * 0.75) calc(var(--sp-1) * 0.75) 0;
+  }
+  .sell-card-art.art-frame.size-md {
+    aspect-ratio: 16 / 11;
+  }
+  .sell-card-tags {
+    top: 11px;
+    left: 11px;
+  }
+  .sell-card-body {
+    padding: var(--sp-1) var(--sp-1) var(--sp-2) var(--sp-2);
+    gap: calc(var(--sp-1) / 4);
+  }
+  .sell-card-name {
+    font-size: 15px;
+  }
+  .sell-card-sub {
+    font-size: 12px;
+  }
+  .sell-price {
+    font-size: 20px;
+  }
+  .sell-add-hint {
+    width: 34px;
+    height: 34px;
+  }
+  .sell-ribbon b {
+    font-size: 16px;
+  }
+  .sell-card-stepper {
+    margin: calc((var(--sp-1) / 4) * -1) var(--sp-1) var(--sp-1);
+    gap: calc(var(--sp-1) / 2);
+  }
+  .sell-tools {
+    padding: 0 var(--sp-1) var(--sp-1);
+  }
+
+  /* Floating checkout bar spans the phone, above the bottom nav — high enough that the Collab SOON sticker
+     (which hangs over the nav's top edge) stays clear of the bar and its shadow. */
+  .sell-cartbar {
+    left: var(--sp-1, 8px);
+    right: var(--sp-1, 8px);
+    width: auto;
+    bottom: calc(var(--bottom-nav-h, 0px) + env(safe-area-inset-bottom) + var(--sp-4));
+    padding: calc(var(--sp-1) * 0.75);
+  }
+  button.sell-cartbar-open {
+    font-size: 17px;
+  }
+  button.sell-cartbar-pay {
+    padding: 0 var(--sp-2);
+    font-size: 15px;
+  }
+
+  /* Full-screen order sheet. */
+  #sheet[data-kind='cart'],
+  #sheet.wide[data-kind='cart'] {
+    width: 100%;
+    max-width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  #sheet[data-kind='cart'][open] {
+    animation: sell-sheet-up 0.2s ease-out;
+  }
+  #sheet[data-kind='cart'] .sheet-grip {
+    display: none;
+  }
+  #sheet[data-kind='cart'] .sheet-head {
+    padding-top: calc(env(safe-area-inset-top) + var(--sp-2));
+    border-radius: 0;
+  }
+  #sheet[data-kind='cart'] .sell-total-row.is-total strong {
+    font-size: 30px;
+  }
+}
+
+/* Narrow phones (≤360px) */
+@media (max-width: 360px) {
+  .sell-hero-frame {
+    width: 84px;
+  }
+  .sell-hero-art.has-photo .sell-hero-frame {
+    width: 76px;
+  }
+  .sell-hero h1 {
+    font-size: 20px;
+  }
+  .sell-hero-cta-more {
+    display: none;
+  }
+  .sell-hero-tools button.toggle {
+    padding-right: var(--sp-1);
+  }
+  .sell-ready .icon {
+    display: none;
+  }
+  .sell-grid {
+    gap: var(--sp-1);
+  }
+  .sell-card-body {
+    padding: var(--sp-1);
+  }
+  .sell-card-name {
+    font-size: 14px;
+  }
+  .sell-price {
+    font-size: 18px;
+  }
+  .sell-add-hint {
+    width: 30px;
+    height: 30px;
+  }
+  .sell-add-hint .icon {
+    width: 17px;
+    height: 17px;
+  }
+  .sell-setprice {
+    padding: calc(var(--sp-1) / 2) calc(var(--sp-1) * 0.75);
+    font-size: 10.5px;
+    letter-spacing: 0.04em;
+  }
+  .sell-card-stepper {
+    margin: calc((var(--sp-1) / 4) * -1) calc(var(--sp-1) * 0.75) calc(var(--sp-1) * 0.75);
+    gap: calc(var(--sp-1) / 4);
+  }
+  .sell-card-stepper .sell-step-qty small {
+    display: none;
+  }
+  .sell-tools {
+    padding: 0 calc(var(--sp-1) * 0.75) calc(var(--sp-1) * 0.75);
+    gap: calc(var(--sp-1) * 0.75);
+  }
+  button.sell-tool {
+    font-size: 12px;
+    padding: calc(var(--sp-1) * 0.75) calc(var(--sp-1) / 2);
+  }
+  .sell-cartbar-icon {
+    display: none;
+  }
+  button.sell-cartbar-open {
+    font-size: 15px;
+    padding: 0 calc(var(--sp-1) / 2);
+  }
+  button.sell-cartbar-pay {
+    padding: 0 var(--sp-1);
+    font-size: 14px;
+  }
+  .sell-cz-base {
+    font-size: 18px;
+  }
+  button.sell-sheet-pay .sell-pay-amt {
+    font-size: 17px;
+  }
+  button.sell-sheet-pay {
+    gap: calc(var(--sp-1) * 0.75);
+    padding-left: var(--sp-1);
+    padding-right: var(--sp-1);
+  }
+  button.sell-sheet-clear {
+    flex: 0 1 84px;
+  }
+}

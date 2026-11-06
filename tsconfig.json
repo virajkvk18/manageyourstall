@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "target": "es2022",
+    "module": "es2022",
+    "moduleResolution": "bundler",
+    "lib": ["es2023", "dom", "dom.iterable"],
+    "strict": false,
+    "noImplicitAny": false,
+    "skipLibCheck": true,
+    "types": []
+  },
+  "files": [
+    "dist/util.mjs",
+    "dist/constants.mjs",
+    "dist/library.mjs",
+    "dist/art/classic.mjs",
+    "dist/art/snacks.mjs",
+    "dist/art/mains.mjs",
+    "dist/art/drinks.mjs",
+    "dist/art/sweets.mjs",
+    "dist/templates.mjs",
+    "dist/catalog.mjs",
+    "dist/domain.mjs",
+    "dist/qr.mjs"
+  ]
+}

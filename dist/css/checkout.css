@@ -1,0 +1,1012 @@
+/* Review & pay + success sheet (ARCHITECTURE.md §13.2). Owner: checkout agent.
+   Styles only .co-* classes; reuses base.css tokens and base classes (receipt-line, segmented, notice, field…). */
+
+/* ------------------------------------------------------------------------------------------------------------------
+   Layout
+   ------------------------------------------------------------------------------------------------------------------ */
+.co-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr);
+  gap: var(--sp-4);
+  align-items: start;
+}
+.co-summary,
+.co-pay {
+  min-width: 0;
+}
+.co-stale {
+  grid-column: 1 / -1;
+  align-items: center;
+  font-weight: 700;
+}
+.co-summary {
+  padding: var(--sp-3);
+  border: var(--line);
+  border-radius: var(--r-lg);
+  background: var(--paper-2);
+  box-shadow: var(--shadow-sm);
+}
+.co-summary-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-1);
+  margin-bottom: calc(var(--sp-1) / 2);
+}
+.co-next-token {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: calc(var(--sp-1) / 2) var(--sp-2);
+  border: var(--line);
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  box-shadow: var(--shadow-sm);
+}
+.co-next-token .icon {
+  width: 16px;
+  height: 16px;
+}
+.co-next-token b {
+  font-family: var(--font-display);
+  font-size: 15px;
+  letter-spacing: 0;
+}
+.co-count {
+  font-size: 13px;
+  font-weight: 700;
+}
+button.co-lines-toggle {
+  display: none;
+}
+
+/* Lines */
+.co-lines {
+  max-height: 260px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.co-line {
+  align-items: flex-start;
+}
+.co-line-main {
+  display: flex;
+  gap: var(--sp-1);
+  min-width: 0;
+}
+.co-qty {
+  align-self: flex-start;
+  flex-shrink: 0;
+  min-width: 34px;
+  padding: calc(var(--sp-1) / 4) var(--sp-1);
+  border: var(--line);
+  border-radius: 7px;
+  background: var(--yellow-soft);
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 900;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.co-line-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.co-line-text b {
+  font-weight: 800;
+}
+.co-line-note {
+  font-style: italic;
+}
+.co-line > strong {
+  font-size: 15px;
+}
+.co-note-card {
+  display: flex;
+  gap: var(--sp-1);
+  align-items: flex-start;
+  margin-top: var(--sp-1);
+  padding: var(--sp-1) var(--sp-2);
+  border: var(--line);
+  border-radius: 10px;
+  background: var(--lavender-soft);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.co-note-card .icon {
+  margin-top: calc(var(--sp-1) / 4);
+}
+
+/* Section labels */
+.co-label {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: calc(var(--sp-1) / 2) var(--sp-1);
+  margin: 0 0 var(--sp-1);
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.co-label .icon {
+  width: 18px;
+  height: 18px;
+}
+.co-label small {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--muted);
+}
+.co-block {
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-2);
+  border-top: var(--line-soft);
+}
+
+/* ------------------------------------------------------------------------------------------------------------------
+   Discount chips & custom discount
+   ------------------------------------------------------------------------------------------------------------------ */
+.co-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+}
+button.co-chip {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: calc(var(--sp-1) / 4);
+  min-height: 44px;
+  max-width: 100%;
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: 14px;
+  background: var(--paper);
+  box-shadow: var(--shadow-sm);
+  font-size: 13px;
+  text-align: left;
+}
+.co-chip-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.co-chip-label .icon {
+  width: 16px;
+  height: 16px;
+}
+.co-chip-hint {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+}
+button.co-chip.short .co-chip-hint {
+  color: var(--danger-ink);
+}
+button.co-chip.on {
+  background: var(--ink);
+  color: var(--paper);
+  box-shadow: 3px 3px 0 var(--pink);
+}
+button.co-chip.on .co-chip-hint {
+  color: var(--lime);
+}
+button.co-chip.open {
+  background: var(--yellow);
+}
+.co-custom {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--sp-1);
+  margin-top: var(--sp-2);
+  padding: var(--sp-2);
+  border: var(--line);
+  border-radius: var(--r);
+  background: var(--yellow-soft);
+}
+.co-custom .field {
+  margin: 0;
+}
+.co-custom .segmented > button {
+  min-height: 48px;
+  padding: var(--sp-1) var(--sp-2);
+  white-space: nowrap;
+}
+button.co-custom-apply {
+  min-height: 48px;
+}
+
+/* ------------------------------------------------------------------------------------------------------------------
+   Totals
+   ------------------------------------------------------------------------------------------------------------------ */
+.co-totals {
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-2);
+  border-top: var(--line-soft);
+}
+.co-trow {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  padding: calc(var(--sp-1) / 2) 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+.co-trow strong {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.co-trow-off {
+  color: var(--ok);
+}
+.co-trow-off span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.co-minimum {
+  display: flex;
+  gap: var(--sp-1);
+  align-items: flex-start;
+  margin: var(--sp-1) 0 calc(var(--sp-1) / 4);
+  padding: var(--sp-1);
+  border: 2px dashed var(--ink);
+  border-radius: 10px;
+  background: var(--yellow-soft);
+  font-size: 13px;
+  font-weight: 600;
+}
+.co-minimum .icon {
+  width: 18px;
+  height: 18px;
+  margin-top: calc(var(--sp-1) / 4);
+}
+.co-grand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: calc(var(--sp-1) / 2) var(--sp-2);
+  margin-top: var(--sp-1);
+  padding: var(--sp-2);
+  border: var(--line-thick);
+  border-radius: var(--r);
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: var(--shadow);
+}
+.co-grand > span {
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.co-grand-amount {
+  font-family: var(--font-display);
+  font-size: 40px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------------------------------------------------------
+   Payment
+   ------------------------------------------------------------------------------------------------------------------ */
+.co-methods {
+  margin-bottom: var(--sp-3);
+  box-shadow: var(--shadow);
+}
+.co-methods > button {
+  flex-direction: column;
+  gap: calc(var(--sp-1) / 2);
+  min-height: 60px;
+  padding: var(--sp-1) calc(var(--sp-1) / 2);
+  font-size: 14px;
+}
+.co-methods > button .icon {
+  width: 22px;
+  height: 22px;
+}
+.co-method-panel {
+  min-width: 0;
+}
+.co-pay {
+  scroll-margin-top: var(--sp-2);
+}
+.co-notes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-2);
+}
+.co-notes.co-notes-cash {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--sp-1);
+}
+button.co-note {
+  flex: 1 1 64px;
+  min-height: 50px;
+  padding: var(--sp-1);
+  border-radius: 10px;
+  background: var(--paper-2);
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+button.co-note.co-note-exact {
+  background: var(--lime);
+  font-family: var(--font-ui);
+  font-size: 15px;
+}
+button.co-note.on {
+  background: var(--ink);
+  color: var(--paper);
+  box-shadow: 3px 3px 0 var(--pink);
+}
+button.co-note:disabled {
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+}
+.co-method-panel .field input {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+/* Change / collect-more display */
+.co-result {
+  display: grid;
+  gap: calc(var(--sp-1) / 4);
+  margin: 0 0 var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border: var(--line-thick);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+}
+.co-result small {
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.co-result strong {
+  font-family: var(--font-display);
+  font-size: 44px;
+  font-weight: 900;
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.co-result > span {
+  font-size: 13px;
+  font-weight: 700;
+}
+.co-result-change {
+  background: var(--mint);
+}
+.co-result-bad {
+  background: var(--coral);
+  color: var(--ink);
+}
+.co-result-bad > span:only-child {
+  font-size: 15px;
+  font-weight: 800;
+}
+.co-result-exact {
+  background: var(--paper-2);
+  box-shadow: var(--shadow-sm);
+}
+.co-result-exact strong {
+  font-size: 26px;
+}
+
+/* UPI QR */
+.co-qr-card {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin: 0 0 var(--sp-1);
+  padding: var(--sp-2);
+  border: var(--line-thick);
+  border-radius: var(--r-lg);
+  background: var(--sky-soft);
+  box-shadow: var(--shadow);
+}
+.co-qr {
+  flex: 0 0 auto;
+  width: 240px;
+  max-width: 100%;
+  padding: var(--sp-1);
+  border: var(--line);
+  border-radius: var(--r);
+  background: #fff;
+}
+.co-qr svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+}
+.co-qr-card figcaption {
+  display: grid;
+  gap: calc(var(--sp-1) / 2);
+  min-width: 0;
+}
+.co-qr-amount {
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 900;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.co-qr-payee {
+  font-size: 15px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+.co-qr-id {
+  font-size: 12px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.co-upi-hint {
+  margin-bottom: var(--sp-1);
+}
+.co-upi-hint p {
+  margin: calc(var(--sp-1) / 4) 0 var(--sp-1);
+}
+.co-other,
+.co-free,
+.co-pending-note {
+  margin-bottom: var(--sp-1);
+}
+.co-other p,
+.co-free p,
+.co-pending-note p {
+  margin-top: calc(var(--sp-1) / 4);
+}
+
+/* Confirmation */
+.check-label.co-confirm {
+  margin-top: var(--sp-1);
+  padding: var(--sp-2);
+  border: var(--line-thick);
+  border-radius: var(--r);
+  background: var(--yellow);
+  font-size: 16px;
+  box-shadow: var(--shadow-sm);
+}
+.check-label.co-confirm:has(input:checked) {
+  background: var(--lime);
+}
+.check-label.co-confirm input {
+  width: 26px;
+  height: 26px;
+}
+.co-honest {
+  margin-top: var(--sp-1);
+}
+
+/* Split */
+.co-split-parts {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-2);
+}
+.co-part {
+  display: grid;
+  gap: calc(var(--sp-1) / 4);
+  padding: var(--sp-1) var(--sp-2);
+  border: var(--line);
+  border-radius: var(--r);
+  box-shadow: var(--shadow-sm);
+  min-width: 0;
+}
+.co-part small {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--sp-1) / 2);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.co-part small .icon {
+  width: 16px;
+  height: 16px;
+}
+.co-part strong {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.co-part-cash {
+  background: var(--lime-soft);
+}
+.co-part-upi {
+  background: var(--sky-soft);
+}
+.co-part-plus {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 900;
+}
+.co-split-wait {
+  margin: calc(var(--sp-1) / 2 * -1) 0 var(--sp-2);
+  font-size: 14px;
+}
+
+/* Pending */
+.check-label.co-pending {
+  margin-top: var(--sp-3);
+  padding: var(--sp-1) var(--sp-2);
+  border: 2px dashed var(--ink);
+  border-radius: var(--r);
+  background: transparent;
+}
+.check-label.co-pending.on {
+  border-style: solid;
+  background: var(--pink-soft);
+}
+.co-pending small {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+/* Action bar */
+.co-why {
+  flex: 1 1 100%;
+  margin: 0 0 calc(var(--sp-1) / 4);
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--danger-ink);
+}
+.sheet-actions > button.co-back {
+  flex: 0 1 180px;
+}
+.sheet-actions > button.co-complete {
+  flex: 2 1 260px;
+  min-height: 58px;
+  font-size: 18px;
+}
+.co-complete span {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------------------------------------------------------------
+   Success
+   ------------------------------------------------------------------------------------------------------------------ */
+.co-success {
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-2);
+  text-align: center;
+  padding: calc(var(--sp-1) / 2) 0 var(--sp-1);
+}
+.co-profit-banner {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: calc(var(--sp-1) / 2) var(--sp-1);
+  width: 100%;
+  padding: var(--sp-1) var(--sp-2);
+  border: var(--line-thick);
+  border-radius: var(--r);
+  background: var(--ink);
+  color: var(--yellow);
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 900;
+  box-shadow: 4px 4px 0 var(--pink);
+  transform: rotate(-1.5deg);
+  animation: co-wobble 0.9s ease-in-out 2;
+}
+.co-profit-banner span {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--paper);
+}
+.co-token-wrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(100%, 420px);
+  padding: var(--sp-4) 0;
+}
+.co-token-card {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  padding: var(--sp-1) var(--sp-5) var(--sp-2);
+  border: var(--line-thick);
+  border-radius: 22px;
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: var(--shadow-lg);
+  transform: rotate(-3deg);
+  animation: co-stamp 0.42s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+}
+.co-token-card small {
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.24em;
+}
+.co-token {
+  font-family: var(--font-display);
+  font-size: 104px;
+  font-weight: 900;
+  font-style: italic;
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.co-success.pending .co-token-card {
+  background: var(--pink-soft);
+  color: var(--ink);
+}
+.co-success.profit .co-token-card {
+  background: var(--ink);
+  color: var(--yellow);
+  box-shadow: 6px 6px 0 var(--pink);
+}
+.co-success-title {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 900;
+}
+.co-success-facts {
+  display: grid;
+  justify-items: center;
+  gap: calc(var(--sp-1) / 2);
+}
+.co-order-no {
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.co-success-total {
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 900;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+.co-success-method {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: var(--sp-1);
+  font-size: 15px;
+  font-weight: 700;
+}
+.co-success-change {
+  display: grid;
+  gap: 0;
+  width: min(100%, 360px);
+  padding: var(--sp-1) var(--sp-3);
+  border: var(--line-thick);
+  border-radius: var(--r);
+  background: var(--mint);
+  box-shadow: var(--shadow);
+}
+.co-success-change small {
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.co-success-change strong {
+  font-family: var(--font-display);
+  font-size: 46px;
+  font-weight: 900;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+.co-success-kitchen {
+  max-width: 40ch;
+  font-size: 14px;
+  color: var(--muted);
+}
+.co-success-kitchen .icon {
+  width: 18px;
+  height: 18px;
+  margin-right: calc(var(--sp-1) / 4);
+}
+.sheet-actions > button.co-next {
+  flex: 2 1 180px;
+  font-size: 17px;
+}
+.sheet-actions > button.co-receipt,
+.sheet-actions > button.co-queue {
+  flex: 1 1 auto;
+  white-space: nowrap;
+}
+/* Success buttons ignore taps for a beat (double-tap guard) but must not look disabled meanwhile. */
+.sheet-actions > button.co-arming[aria-disabled='true'] {
+  opacity: 1;
+  cursor: default;
+  box-shadow: var(--shadow-sm);
+}
+.sheet-actions > button.co-next.co-arming[aria-disabled='true'] {
+  box-shadow: var(--shadow);
+}
+
+/* Confetti burst (decorative). With reduced motion the pieces simply sit around the token. */
+.co-burst {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.co-burst i {
+  position: absolute;
+  top: calc(50% + var(--y));
+  left: calc(50% + var(--x));
+  width: 12px;
+  height: 12px;
+  margin: calc(var(--sp-1) * -1) 0 0 calc(var(--sp-1) * -1);
+  border: 2px solid var(--ink);
+  border-radius: 3px;
+  background: var(--c);
+  transform: rotate(var(--r));
+  animation: co-fly 0.8s cubic-bezier(0.15, 0.8, 0.3, 1) var(--d) both;
+}
+.co-burst i.round {
+  border-radius: 50%;
+}
+.co-burst i.bar {
+  width: 6px;
+  height: 18px;
+  margin: calc(var(--sp-1) * -1) 0 0 calc(var(--sp-1) / 2 * -1);
+}
+.co-success.profit .co-burst i {
+  width: 14px;
+  height: 14px;
+}
+
+@keyframes co-fly {
+  from {
+    top: 50%;
+    left: 50%;
+    transform: rotate(0deg) scale(0.2);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+}
+@keyframes co-stamp {
+  from {
+    transform: rotate(-14deg) scale(1.6);
+    opacity: 0;
+  }
+}
+@keyframes co-wobble {
+  50% {
+    transform: rotate(1.5deg) scale(1.03);
+  }
+}
+
+/* ------------------------------------------------------------------------------------------------------------------
+   Responsive
+   ------------------------------------------------------------------------------------------------------------------ */
+@media (max-width: 1023px) {
+  .co-qr-card {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+  .co-qr {
+    width: min(260px, 100%);
+    margin: 0 auto;
+  }
+}
+@media (max-width: 767px) {
+  /* Phones: Review & pay and the success token take the whole screen (no peeking page, no drag grip). */
+  #sheet[data-kind='checkout'],
+  #sheet[data-kind='co-success'] {
+    width: 100%;
+    max-width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  #sheet[data-kind='checkout'] .sheet-grip,
+  #sheet[data-kind='co-success'] .sheet-grip {
+    display: none;
+  }
+  #sheet[data-kind='checkout'] .sheet-head,
+  #sheet[data-kind='co-success'] .sheet-head {
+    padding-top: calc(var(--sp-2) + env(safe-area-inset-top));
+    border-radius: 0;
+  }
+  #sheet[data-kind='co-success'] .sheet-body {
+    display: grid;
+    align-content: center;
+  }
+  .co-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--sp-3);
+  }
+  .co-summary {
+    padding: var(--sp-2);
+  }
+  .co-lines {
+    max-height: none;
+  }
+  .co-summary:not(.lines-open) .co-lines {
+    display: none;
+  }
+  .co-summary:not(.lines-open) .co-summary-head {
+    margin-bottom: 0;
+  }
+  .co-count {
+    display: none;
+  }
+  button.co-lines-toggle {
+    display: inline-flex;
+    min-height: 44px;
+    padding: var(--sp-1);
+  }
+  .co-notes.co-notes-cash button.co-note {
+    padding: var(--sp-1) calc(var(--sp-1) / 4);
+    font-size: 16px;
+  }
+  .co-notes.co-notes-cash button.co-note-exact {
+    font-size: 14px;
+  }
+  .co-grand-amount {
+    font-size: 36px;
+  }
+  .co-result strong {
+    font-size: 40px;
+  }
+  .co-qr {
+    width: min(270px, 100%);
+  }
+  .sheet-actions > button.co-back {
+    flex: 0 0 auto;
+    padding-left: var(--sp-2);
+    padding-right: var(--sp-2);
+  }
+  .co-back .co-back-text {
+    font-size: 0;
+  }
+  .co-back .co-back-text::after {
+    content: 'Cart';
+    font-size: 15px;
+  }
+  .sheet-actions > button.co-complete {
+    flex: 1 1 0;
+    min-width: 0;
+    padding-inline: var(--sp-2);
+    font-size: 17px;
+  }
+  .sheet-actions > button.co-complete > .icon {
+    display: none;
+  }
+  .sheet-actions > button.co-next {
+    flex-basis: 100%;
+    order: -1;
+  }
+  .co-token {
+    font-size: 92px;
+  }
+  /* The stamp-in (scale 1.6) and the confetti must never push the full-screen sheet sideways. */
+  .co-token-wrap {
+    overflow-x: clip;
+    overflow-clip-margin: var(--sp-1);
+  }
+}
+@media (max-width: 350px) {
+  .co-custom {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .co-custom .co-custom-type {
+    grid-column: 1 / -1;
+  }
+  .co-methods > button {
+    font-size: 13px;
+    padding: var(--sp-1) calc(var(--sp-1) / 4);
+  }
+  .co-grand-amount {
+    font-size: 32px;
+  }
+  .co-result strong {
+    font-size: 34px;
+  }
+  .sheet-actions > button.co-back {
+    width: 52px;
+    padding: 0;
+  }
+  .co-back .co-back-text::after {
+    content: none;
+  }
+  .sheet-actions > button.co-complete {
+    font-size: 16px;
+    padding-left: var(--sp-1);
+    padding-right: var(--sp-1);
+  }
+  .co-notes.co-notes-cash {
+    gap: calc(var(--sp-1) / 2);
+  }
+  .co-notes.co-notes-cash button.co-note {
+    font-size: 14px;
+  }
+  .co-notes.co-notes-cash button.co-note-exact {
+    font-size: 13px;
+  }
+  button.co-note {
+    flex-basis: 56px;
+    font-size: 15px;
+  }
+  .co-token {
+    font-size: 80px;
+  }
+  .co-complete-word {
+    display: none;
+  }
+  .sheet-actions > button.co-receipt .icon,
+  .sheet-actions > button.co-queue .icon {
+    display: none;
+  }
+}
+/* Short phones (360×640 Androids, 320×568): keep the change-to-return card above the action bar on the success sheet. */
+@media (max-width: 767px) and (max-height: 760px) {
+  .co-success {
+    gap: var(--sp-1);
+    padding-top: 0;
+  }
+  .co-token-wrap {
+    padding: var(--sp-1) 0;
+  }
+  .co-token-card {
+    padding: var(--sp-1) var(--sp-4);
+  }
+  .co-token {
+    font-size: 68px;
+  }
+  .co-success-title {
+    font-size: 21px;
+  }
+  .co-success-total {
+    font-size: 30px;
+  }
+  .co-success-change {
+    padding: var(--sp-1) var(--sp-2);
+  }
+  .co-success-change strong {
+    font-size: 38px;
+  }
+  .co-profit-banner {
+    padding: var(--sp-1) var(--sp-2);
+    font-size: 19px;
+  }
+}

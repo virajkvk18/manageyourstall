@@ -8,6 +8,9 @@ playwright.config.mjs
 make-icons.py
 server.mjs
 fonts.css
+scripts
+tsconfig.json
+ARCHITECTURE.md
 *.tar.gz
 *.tgz
 .env*
