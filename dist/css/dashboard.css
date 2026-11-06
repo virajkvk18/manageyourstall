@@ -1725,12 +1725,13 @@ button.dash-team-go {
 .dash-panel-head h2 {
   flex: 1 1 160px;
 }
-/* bill rows: the amount moves under the title on tight cards */
+/* bill rows: the amount stays on the right; long details wrap inside the middle column */
 button.dash-bill {
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 .dash-bill-main {
-  flex: 1 1 150px;
+  flex: 1 1 0;
+  min-width: 0;
 }
 .dash-bill-amount {
   margin-left: auto;

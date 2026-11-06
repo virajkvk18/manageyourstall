@@ -26,7 +26,7 @@ import {initialsOf} from '../util.mjs';
 
 const TABS = /** @type {const} */ (['bills', 'team', 'settle']);
 const TAB_LABELS = {
-  bills: '<span class="money-tab-emoji" aria-hidden="true">🧾</span>Bills',
+  bills: '<span class="money-tab-emoji" aria-hidden="true">📒</span>Bills',
   team: '<span class="money-tab-emoji" aria-hidden="true">👥</span>Team',
   settle: '<span class="money-tab-emoji" aria-hidden="true">🤝</span>Settlement',
 };
@@ -470,7 +470,7 @@ function openBillSheet({mode = 'bill', category = '', title = '', amount = 0, ex
     <div class="money-photo-preview" id="money-photo-preview">${photoPreview()}</div>
   </div>`;
   const amountVal = e ? (e.amount / 100).toFixed(e.amount % 100 ? 2 : 0) : amount > 0 ? (amount / 100).toFixed(amount % 100 ? 2 : 0) : '';
-  const heading = mode === 'edit' ? 'Edit bill' : mode === 'restock' ? '🔄 Quick mid-stall restock' : '🧾 Add a bill';
+  const heading = mode === 'edit' ? 'Edit bill' : mode === 'restock' ? '🔄 Quick mid-stall restock' : '📒 Add a bill';
   const body = `<form class="money-bill-form" data-submit="money-save-bill" novalidate>
     ${mode === 'restock' ? '<p class="notice sky money-sheet-note">Ran out mid-fest? Log the run in 10 seconds — it goes straight into your break-even.</p>' : ''}
     ${restockChips}

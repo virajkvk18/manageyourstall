@@ -959,3 +959,11 @@ Copy / Share to WhatsApp of `settlementText`, Save snapshot (admin), saved snaps
 Dashboard gets "+ Quick mid-stall restock" (`money-restock`) and "Add bill" buttons plus a team payout preview. More hub links to
 `money-open` and `collab`. Backups include bill photos and hero photos (media); CSV exports add `expenses`, `contributions`,
 `settlement` kinds (`data-export`).
+
+### 16.8 Render speed: SVG sprite
+
+`library.artSprite()` returns one hidden `<svg>` holding a `<symbol id="mys-art-<id>">` per illustration (`SPRITE_PREFIX`).
+`ui/core.installArtSprite()` inserts it once into `document.body` outside `#app` before the first render and calls
+`library.useSprite(true)`; from then on `artSvg()` and `heroSvg()` emit `<use href="#mys-art-<id>">` instead of inlining each
+illustration, which keeps re-renders about 3x smaller. With sprite mode off (Node and unit tests) the output is exactly the inline
+markup described in §7.

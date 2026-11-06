@@ -180,7 +180,7 @@ function show() {
   const next = step < STEPS.length - 1
     ? btn(`Next ${icon('chevron-right')}`, 'onb-next', 'primary onb-next')
     : btn(`${icon('check')} Finish`, 'onb-finish', 'primary onb-finish');
-  openSheet(step === 0 ? 'Welcome to your stall 🎉' : step === 1 ? 'Make it yours' : 'Let’s make some noise!', body, back + next, 'onboarding', {wide: true});
+  openSheet(step === 0 ? 'Welcome to your stall 🎉' : step === 1 ? 'Make it yours' : 'Let’s make some noise!', body, back + next, 'onboarding', {wide: true});
 }
 
 /** Open (or restart) the onboarding flow with the current stall as the starting point. */
