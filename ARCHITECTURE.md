@@ -1129,5 +1129,5 @@ copy** (force push) or **Use the cloud copy** (download a local backup file firs
 - `auth:me` also returns `expiresAt` (and a `stall` object for team sessions); `stalls:updateInfo` returns the updated row;
   `stalls:setTeamPassword` returns `{hasTeamPassword}`. Extra indexes: `sessions.by_stall`, `stalls.by_snapshot`. An hourly
   cron deletes orphaned uploads, expired sessions and stale lockout rows.
-- `dist/config.mjs` uses the dev deployment for local runs and tests; the live site uses `PROD_URL` once
-  `npx convex deploy` has created the production deployment (until then it also uses the dev deployment).
+- `dist/config.mjs`: local runs and tests use the dev deployment (descriptive-gull-970); the live site uses the production
+  deployment (elegant-marlin-486). Deploy backend changes with `npx convex dev --once` (dev) and `npx convex deploy` (prod).
