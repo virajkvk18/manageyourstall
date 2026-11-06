@@ -18,8 +18,12 @@ export {esc, money, paise, tokenLabel, icon};
 // State
 // ---------------------------------------------------------------------------------------------------------------------
 
-/** Always the latest committed state. @type {{state: any}} */
-export const store = {state: null};
+/**
+ * Always the latest committed state of the OPEN stall (`state` null when no stall is open), its index id (`stallId`) and
+ * the device's stalls index (`meta`, refreshed on boot, stall switches, commits and other-tab changes).
+ * @type {{state: any, stallId: string|null, meta: any}}
+ */
+export const store = {state: null, stallId: null, meta: null};
 
 /** Current session (live or demo ledger). */
 export const S = () => store.state[store.state.mode];
@@ -438,16 +442,129 @@ export function installArtSprite() {
   }
 }
 
-/** Re-render #app from the latest state, keeping focus and caret of a focused element that has an id. */
+// ---------------------------------------------------------------------------------------------------------------------
+// Pages outside the stall (§17.2): hash routes rendered full-screen without the shell
+// ---------------------------------------------------------------------------------------------------------------------
+
+/** Every outside-the-stall route, in the order of §17.2. */
+export const PAGES = Object.freeze(['welcome', 'setup', 'stalls', 'login', 'signup', 'join', 'account']);
+const PAGE_TITLES = /** @type {Record<string, string>} */ ({
+  welcome: 'Run your stall like a boss',
+  setup: 'Start a stall',
+  stalls: 'Your stalls',
+  login: 'Log in',
+  signup: 'Create account',
+  join: 'Join a team stall',
+  account: 'Your account',
+});
+/** @type {Map<string, () => string>} */
+const pages = new Map();
+
+/**
+ * Register a full-screen page for `#/<name>` (rendered without the stall shell).
+ * @param {string} name e.g. 'welcome'
+ * @param {() => string} renderFn returns the whole page's markup
+ */
+export function registerPage(name, renderFn) {
+  pages.set(String(name).toLowerCase(), renderFn);
+}
+
+/** The page named in location.hash ('' when the hash names none). `#/join?code=MYS-ABCDE` → 'join'. */
+function hashPage() {
+  if (typeof location === 'undefined') return '';
+  const m = /^#\/([a-z][a-z0-9-]*)/i.exec(location.hash || '');
+  const name = m ? m[1].toLowerCase() : '';
+  return name && (pages.has(name) || PAGES.includes(name)) ? name : '';
+}
+
+/**
+ * The outside page being shown: the one in the hash, else 'welcome' when no stall is open, else '' (the stall shell).
+ * @returns {string}
+ */
+export function currentPage() {
+  return hashPage() || (store.state ? '' : 'welcome');
+}
+
+/** True while a stall is open in this tab. */
+export const hasStall = () => !!store.state;
+
+/** Fallback for a route whose page module hasn't registered (yet). @param {string} name */
+function fallbackPage(name) {
+  const links = [
+    ['setup', 'Start my stall', 'primary'],
+    ['stalls', 'Your stalls', ''],
+    ['login', 'Log in', 'quiet-outline'],
+  ].filter(([key]) => key !== name);
+  return `<div class="boot mys-page-fallback">
+    <span class="boot-mark">${BRAND.short}</span>
+    <span class="credit-badge">${BRAND.credit}</span>
+    <p class="boot-word">${BRAND.name}</p>
+    <p class="boot-status">${esc(PAGE_TITLES[name] || 'This page')} is loading. Pick where to go next.</p>
+    <div class="row wrap" style="justify-content:center">${links.map(([key, label, cls]) => btn(esc(label), 'core-go-page', cls, `data-page="${key}"`)).join('')}
+    ${store.state ? btn('Back to my stall', 'core-back-to-stall', 'yellow') : ''}</div>
+  </div>`;
+}
+
+/** @param {string} name */
+function pageHtml(name) {
+  const fn = pages.get(name);
+  if (!fn) return fallbackPage(name);
+  try {
+    return fn();
+  } catch (err) {
+    console.error(err);
+    return `<div class="boot boot-error" role="alert"><span class="boot-mark">${BRAND.short}</span><span class="credit-badge">${BRAND.credit}</span>
+      <h1>This page hit a snag.</h1><p>${esc(messageOf(err))}</p><p>Your stalls are safe on this phone.</p>
+      ${btn('Reload', 'core-reload', 'primary')}</div>`;
+  }
+}
+
+/** Accent/secondary CSS variables: the open stall's theme inside the shell, MYS defaults on outside pages. @param {any} c */
+function applyThemeVars(c) {
+  const accent = HEX_RE.test(c?.theme?.accent) ? c.theme.accent : '#FFDD35';
+  const root = document.documentElement.style;
+  root.setProperty('--accent', accent);
+  root.setProperty('--on-accent', onColor(accent));
+  const secondary = HEX_RE.test(c?.theme?.secondary) ? c.theme.secondary : '#FF4D87';
+  root.setProperty('--secondary', secondary);
+  root.setProperty('--on-secondary', onColorMax(secondary));
+}
+
+/** What the last render showed: 'page:<name>' or 'stall:<id>' (switching views scrolls to the top). */
+let lastView = '';
+
+/**
+ * Re-render #app, keeping focus and caret of a focused element that has an id. Shows a registered page full-screen when no
+ * stall is open or the hash names a page (§17.2); otherwise the stall shell with the current screen.
+ */
 export function render() {
   const app = appEl();
-  if (!app || !store.state || !shellFn) return;
+  if (!app) return;
+  const page = currentPage();
+  if (!page && (!store.state || !shellFn)) return;
   installArtSprite();
   const active = /** @type {any} */ (document.activeElement);
   const keep = active && active.id && app.contains(active)
     ? {id: active.id, start: safe(() => active.selectionStart), end: safe(() => active.selectionEnd), dir: safe(() => active.selectionDirection)}
     : null;
-  app.innerHTML = shellFn(screenHtml(ui.screen));
+  const view = page ? `page:${page}` : `stall:${store.stallId || ''}`;
+  const root = document.documentElement;
+  if (page) {
+    // No stall open and no route yet (boot, a stall left in another tab): show it in the URL as #/welcome.
+    if (!hashPage()) safe(() => history.replaceState(history.state, '', `${location.pathname}${location.search}#/${page}`));
+    root.dataset.view = 'page';
+    root.dataset.page = page;
+    applyThemeVars(null);
+    app.innerHTML = pageHtml(page);
+    document.title = `${PAGE_TITLES[page] || BRAND.name} · ${BRAND.name} (${BRAND.short})`;
+  } else {
+    root.dataset.view = 'stall';
+    delete root.dataset.page;
+    const c = C();
+    applyThemeVars(c);
+    app.innerHTML = /** @type {(html: string) => string} */ (shellFn)(screenHtml(ui.screen));
+    document.title = `${c?.profile?.stallName || 'My stall'} · ${BRAND.name}`;
+  }
   if (keep) {
     const el = /** @type {any} */ (document.getElementById(keep.id));
     if (el && app.contains(el)) {
@@ -457,15 +574,265 @@ export function render() {
       }
     }
   }
-  const c = C();
-  const accent = HEX_RE.test(c?.theme?.accent) ? c.theme.accent : '#FFDD35';
-  const root = document.documentElement.style;
-  root.setProperty('--accent', accent);
-  root.setProperty('--on-accent', onColor(accent));
-  const secondary = HEX_RE.test(c?.theme?.secondary) ? c.theme.secondary : '#FF4D87';
-  root.setProperty('--secondary', secondary);
-  root.setProperty('--on-secondary', onColorMax(secondary));
-  document.title = `${c?.profile?.stallName || 'My stall'} · ${BRAND.name}`;
+  if (lastView && view !== lastView) window.scrollTo(0, 0);
+  lastView = view;
+}
+
+/** Drop a page route from the URL (keeps history so Back returns to it). */
+function clearHash() {
+  if (typeof location === 'undefined' || !location.hash) return;
+  try {
+    history.pushState(null, '', location.pathname + location.search);
+  } catch {
+    location.hash = '';
+  }
+}
+
+/**
+ * Show an outside page: sets location.hash to `#/<name>` and renders (closes any open sheet first).
+ * @param {string} name 'welcome' | 'setup' | 'stalls' | 'login' | 'signup' | 'join' | 'account' (may carry '?query')
+ */
+export function goPage(name) {
+  const target = `#/${String(name || 'welcome').replace(/^#?\/?/, '')}`;
+  if (sheetEl()?.open) closeSheet();
+  if (pinEl()?.open) closePin(false);
+  if (location.hash !== target) location.hash = target;
+  render();
+  window.scrollTo(0, 0);
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Stalls: open / leave / switch (§17.1–17.2)
+// ---------------------------------------------------------------------------------------------------------------------
+
+/** @type {Set<(info: {stallId: string, state: any}) => void>} */
+const committedHooks = new Set();
+/** @type {Set<(info: {stallId: string|null, state: any}) => void>} */
+const stallHooks = new Set();
+/** @type {Set<(stallId: string) => any>} */
+const leaveHooks = new Set();
+
+/**
+ * Called after every successful commit with {stallId, state} (the cloud sync engine subscribes).
+ * @param {(info: {stallId: string, state: any}) => void} fn
+ * @returns {() => void} unsubscribe
+ */
+export function onCommitted(fn) {
+  committedHooks.add(fn);
+  return () => committedHooks.delete(fn);
+}
+
+/**
+ * Called whenever this tab switches to another stall or leaves one ({stallId: null, state: null}). Modules reset per-stall
+ * drafts here.
+ * @param {(info: {stallId: string|null, state: any}) => void} fn
+ * @returns {() => void} unsubscribe
+ */
+export function onStallChange(fn) {
+  stallHooks.add(fn);
+  return () => stallHooks.delete(fn);
+}
+
+/**
+ * Awaited (≤ 6 s each, errors ignored) before leaving a stall — e.g. to push pending cloud changes.
+ * @param {(stallId: string) => any} fn
+ * @returns {() => void} unsubscribe
+ */
+export function onBeforeLeave(fn) {
+  leaveHooks.add(fn);
+  return () => leaveHooks.delete(fn);
+}
+
+/** @param {Set<Function>} hooks @param {any} info */
+function fire(hooks, info) {
+  for (const fn of [...hooks]) {
+    try {
+      const out = fn(info);
+      if (out instanceof Promise) out.catch(err => console.error(err));
+    } catch (err) {
+      console.error(err);
+    }
+  }
+}
+
+/** Resolve after `ms` at the latest. @param {Promise<any>} p @param {number} ms */
+function within(p, ms) {
+  let timer = 0;
+  return Promise.race([
+    Promise.resolve(p).catch(err => console.warn(err)),
+    new Promise(resolve => {
+      timer = window.setTimeout(resolve, ms);
+    }),
+  ]).finally(() => clearTimeout(timer));
+}
+
+/** Re-read the stalls index into store.meta (best effort). */
+export async function refreshMeta() {
+  try {
+    store.meta = await storage.getMeta();
+  } catch (err) {
+    console.warn('Could not read the stalls list', err);
+  }
+  return store.meta;
+}
+
+/** Keep the in-memory index card of the open stall in step with a committed state. @param {string} id @param {any} state */
+function noteSummary(id, state) {
+  const entry = store.meta?.stalls?.find((/** @type {any} */ e) => e.id === id);
+  if (entry) {
+    entry.summary = storage.stallSummary(state);
+    entry.updatedAt = new Date().toISOString();
+  }
+}
+
+/**
+ * Adopt a stall (or none) in this tab: state, admin lock, screen, sheets. No storage write. Returns whether the stall
+ * changed; callers then render and run `announce()` so onStallChange hooks see the new view.
+ * @param {string|null} id
+ * @param {any} state
+ * @returns {boolean}
+ */
+function adopt(id, state) {
+  const changed = store.stallId !== id;
+  if (sheetEl()?.open) closeSheet();
+  if (pinEl()?.open) closePin(false);
+  store.state = state;
+  store.stallId = state ? id : null;
+  if (changed) {
+    lockAdmin();
+    wrongTries = 0;
+    ui.screen = state ? 'sell' : '';
+  }
+  return changed;
+}
+
+/** Tell onStallChange hooks about the stall now open in this tab (or none). */
+const announce = () => fire(stallHooks, {stallId: store.stallId, state: store.state});
+
+/**
+ * Open a stall on this device: storage.openStall → store.state → images → clear the page route → render.
+ * @param {string} id stall entry id
+ * @returns {Promise<any>} its state
+ */
+export async function openStallById(id) {
+  const state = await storage.openStall(id);
+  const changed = adopt(id, state);
+  await reloadMedia().catch(err => console.warn('Images could not be loaded', err));
+  await refreshMeta();
+  clearHash();
+  render();
+  window.scrollTo(0, 0);
+  if (changed) announce();
+  return state;
+}
+
+/** Push this stall's pending cloud changes before leaving (cloud.mjs is optional and loaded lazily). @param {string} id */
+async function flushCloud(id) {
+  try {
+    const cloud = /** @type {any} */ (await import('../cloud.mjs'));
+    if (typeof cloud.flushSync === 'function') {
+      await within(cloud.flushSync(id), 6000);
+      return;
+    }
+    const entry = store.meta?.stalls?.find((/** @type {any} */ e) => e.id === id);
+    if (typeof cloud.pushStall === 'function' && entry?.cloud?.dirty && navigator.onLine !== false) {
+      await within(cloud.pushStall(id), 6000);
+    }
+  } catch (err) {
+    console.warn('Cloud sync skipped before leaving', err);
+  }
+}
+
+/**
+ * Leave the open stall: flush pending cloud sync → storage.leaveStall → store.state = null → the welcome page.
+ * The stall's data stays on this device.
+ */
+export async function leaveCurrentStall() {
+  const id = store.stallId;
+  if (id) {
+    for (const fn of [...leaveHooks]) await within(fn(id), 6000);
+    await flushCloud(id);
+  }
+  await storage.leaveStall();
+  const changed = adopt(null, null);
+  await refreshMeta();
+  goPage('welcome');
+  if (changed) announce();
+}
+
+/**
+ * Persist a change: one atomic storage.mutate(fn) on the open stall, then adopt the new state and re-render.
+ * @template T
+ * @param {(state: any) => T} fn synchronous; throw to roll back
+ * @param {{render?: boolean}} [options]
+ * @returns {Promise<T>}
+ */
+export async function commit(fn, {render: doRender = true} = {}) {
+  if (!store.state) throw Error('Open a stall first.');
+  /** @type {any} */
+  let result;
+  try {
+    result = await storage.mutate(fn, {stallId: store.stallId});
+  } catch (err) {
+    if (/different stall/.test(messageOf(err))) syncExternal({type: 'meta', stallId: null});
+    throw err;
+  }
+  store.state = result.state;
+  if (!store.stallId) store.stallId = result.stallId;
+  noteSummary(result.stallId, result.state);
+  if (doRender) render();
+  fire(committedHooks, {stallId: result.stallId, state: result.state});
+  return result.output;
+}
+
+let externalQueue = Promise.resolve();
+
+/**
+ * Another tab changed storage: follow a stall switch/leave, adopt a newer state of the open stall, refresh pages.
+ * Serialized so bursts of messages apply in order.
+ * @param {{type: 'meta'|'state', stallId: string|null}} change
+ */
+function syncExternal(change) {
+  externalQueue = externalQueue.then(() => applyExternal(change)).catch(showError);
+  return externalQueue;
+}
+
+/** @param {{type: 'meta'|'state', stallId: string|null}} change */
+async function applyExternal(change) {
+  const meta = await storage.getMeta();
+  store.meta = meta;
+  const active = meta.activeStallId;
+  if (active !== store.stallId) {
+    const had = !!store.state;
+    const open = (sheetEl()?.open || pinEl()?.open) && had;
+    if (active) {
+      const state = await storage.read();
+      adopt(active, state);
+      await reloadMedia().catch(() => {});
+      render();
+      announce();
+      const name = state?.config?.profile?.stallName || 'another stall';
+      toast(`Another tab switched this phone to ${name}.${open ? ' Please reopen your panel.' : ''}`, {tone: 'warn'});
+    } else {
+      adopt(null, null);
+      render();
+      announce();
+      if (had) toast('This stall was closed in another tab. Its data is safe on this phone.', {tone: 'warn'});
+    }
+    return;
+  }
+  if (change.type === 'state' && store.state && change.stallId === store.stallId) {
+    store.state = await storage.read();
+    await reloadMedia().catch(() => {});
+    render();
+    if (pinEl()?.open) closePin(false);
+    if (sheetEl()?.open) {
+      closeSheet();
+      toast('Another tab updated this stall. Please reopen your panel.', {tone: 'warn'});
+    }
+    return;
+  }
+  if (change.type === 'meta' || currentPage()) render();
 }
 
 /** @template T @param {() => T} fn @returns {T|null} */
@@ -483,22 +850,9 @@ function safe(fn) {
  */
 export function navigate(screen) {
   ui.screen = screens.has(screen) ? screen : 'sell';
+  if (store.state) clearHash(); // a stall screen from an outside page goes back into the shell
   render();
   window.scrollTo(0, 0);
-}
-
-/**
- * Persist a change: one atomic storage.mutate(fn), then adopt the new state and re-render.
- * @template T
- * @param {(state: any) => T} fn synchronous; throw to roll back
- * @param {{render?: boolean}} [options]
- * @returns {Promise<T>}
- */
-export async function commit(fn, {render: doRender = true} = {}) {
-  const result = await storage.mutate(fn);
-  store.state = result.state;
-  if (doRender) render();
-  return result.output;
 }
 
 /**
@@ -983,6 +1337,15 @@ registerActions({
     await pending.onConfirm();
     if (sheetKind() === 'confirm' && pendingConfirm === pending) closeSheet();
   },
+  // Kernel routing actions any page may use: data-page="stalls" etc.
+  'core-go-page': (_el, ds) => goPage(ds.page || 'welcome'),
+  'core-open-stall': (_el, ds) => openStallById(ds.id || ''),
+  'core-leave-stall': () => leaveCurrentStall(),
+  'core-back-to-stall': () => {
+    if (!store.state) return goPage('welcome');
+    navigate(ui.screen || 'sell');
+  },
+  'core-reload': () => location.reload(),
 });
 
 /** @param {Element} el @returns {Record<string, string>} */
@@ -1070,19 +1433,23 @@ function wireGlobalListeners() {
   });
   window.addEventListener('offline', () => render());
 
-  storage.onExternalChange(async () => {
-    try {
-      store.state = await storage.read();
-      await reloadMedia().catch(() => {});
-      render();
-      if (pinEl()?.open) closePin(false);
-      if (sheetEl()?.open) {
-        closeSheet();
-        toast('Another tab updated this stall. Please reopen your panel.', {tone: 'warn'});
-      }
-    } catch (err) {
-      showError(err);
-    }
+  // Other tabs: a stall switch/leave elsewhere is followed here; a write to the open stall is adopted (§17.2).
+  storage.onExternalChange(change => {
+    syncExternal(change);
+  });
+
+  // Hash routes (#/welcome, #/stalls, …): Back/Forward and links render the matching view.
+  window.addEventListener('hashchange', () => {
+    const page = currentPage();
+    const view = page ? `page:${page}` : `stall:${store.stallId || ''}`;
+    if (view === lastView) return;
+    if (sheetEl()?.open) closeSheet();
+    render();
+  });
+  window.addEventListener('popstate', () => {
+    const page = currentPage();
+    const view = page ? `page:${page}` : `stall:${store.stallId || ''}`;
+    if (view !== lastView) render();
   });
 }
 

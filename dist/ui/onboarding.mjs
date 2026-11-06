@@ -5,7 +5,7 @@
 // `onb-skip` ("Skip — explore the sample stall") marks the stall onboarded and keeps the sample stall as it is.
 import {
   C, store, esc, icon, btn, field, check, textarea, openSheet, closeSheet, sheetKind, sheetEl, commitConfig, commit, toast,
-  navigate, runAction, requireAdmin, onBoot, registerActions, registerInputs, registerChanges,
+  navigate, runAction, requireAdmin, onBoot, registerActions, registerInputs, registerChanges, currentPage,
 } from './core.mjs';
 import {saveProfile, addMember, CATALOG_LIMITS} from '../catalog.mjs';
 import {applyTheme} from '../domain.mjs';
@@ -248,8 +248,9 @@ async function finish() {
   return true;
 }
 
+// Boot guard (§17.2): only an open stall that isn't onboarded yet, and not while a full-screen page (#/stalls…) is showing.
 onBoot(() => {
-  if (store.state && !store.state.onboarded) openOnboarding();
+  if (store.state && !store.state.onboarded && !currentPage()) openOnboarding();
 });
 
 registerInputs({

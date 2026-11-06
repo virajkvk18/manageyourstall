@@ -8,7 +8,10 @@ import 'fake-indexeddb/auto';
 globalThis.BroadcastChannel = undefined;
 
 const storage = await import('../dist/storage.mjs');
-const {init, mutate, read, closeDB, getAllMedia, putMedia, deleteMedia, replaceAll, pruneMedia, DB_NAME} = storage;
+const {
+  init, mutate, read, closeDB, getAllMedia, putMedia, deleteMedia, replaceAll, pruneMedia, DB_NAME,
+  getMeta, createStall, openStall, leaveStall, deleteStall, readStall, writeStall, updateEntry, getMediaFor, stallSummary,
+} = storage;
 const {initialState, session, makeLine, createOrder, report, uuid, audit, addExpense, voidExpense, referencedMedia} = await import('../dist/domain.mjs');
 
 const v1State = JSON.parse(readFileSync(new URL('./fixtures/v1-state.json', import.meta.url), 'utf8'));
@@ -44,7 +47,17 @@ async function reset() {
 
 test('v1 database upgrades in place: stores, schema v2 and the live ledger survive', async () => {
   await createV1Database(structuredClone(v1State));
-  const st = await init();
+  const booted = await init();
+  const st = booted.state;
+  // The legacy stall becomes the one active entry, still stored at key 'root'.
+  assert.equal(booted.meta.activeStallId, 'root');
+  assert.equal(booted.meta.stalls.length, 1);
+  assert.equal(booted.meta.stalls[0].id, 'root');
+  assert.equal(booted.meta.stalls[0].key, 'root');
+  assert.equal(booted.meta.stalls[0].summary.name, 'Packet Pataka');
+  assert.equal(booted.meta.stalls[0].summary.orders, 5);
+  assert.equal(booted.meta.stalls[0].summary.collected, 28000);
+  assert.deepEqual(await getMeta(), booted.meta);
   assert.equal(st.version, 2);
   assert.equal(st.config.schema, 2);
   assert.equal(st.revision, v1State.revision + 1);
@@ -283,4 +296,282 @@ test('a factory reset via replaceAll clears every image', async () => {
   assert.equal(st.onboarded, false);
   assert.equal(st.live.orders.length, 0);
   assert.deepEqual(st.live, {...session(), draftId: st.live.draftId});
+});
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Many stalls on one device (§17.1)
+// ---------------------------------------------------------------------------------------------------------------------
+
+/** Delete the whole database (a brand-new device). */
+async function wipe() {
+  closeDB();
+  await new Promise((resolve, reject) => {
+    const req = indexedDB.deleteDatabase(DB_NAME);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+    req.onblocked = () => reject(Error('blocked'));
+  });
+}
+
+/** Raw read/write of one key in the 'state' store (an old cached tab, or a peek under the adapter). */
+function raw(key, value) {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME);
+    req.onerror = () => reject(req.error);
+    req.onsuccess = () => {
+      const conn = req.result;
+      const tx = conn.transaction('state', value === undefined ? 'readonly' : 'readwrite');
+      const r = value === undefined ? tx.objectStore('state').get(key) : tx.objectStore('state').put(value, key);
+      tx.oncomplete = () => {
+        conn.close();
+        resolve(value === undefined ? r.result : undefined);
+      };
+      tx.onerror = () => reject(tx.error);
+    };
+  });
+}
+
+/** An onboarded stall named `name`. */
+function stall(name, templateId) {
+  const st = initialState(templateId ? {templateId} : {});
+  st.onboarded = true;
+  st.config.profile.stallName = name;
+  return st;
+}
+
+test('a new device has no stall: empty index, nothing active, active-stall calls refuse', async () => {
+  await wipe();
+  const {meta, state} = await init();
+  assert.equal(state, null);
+  assert.deepEqual(meta, {version: 1, activeStallId: null, stalls: []});
+  assert.deepEqual(await getMeta(), meta);
+  await assert.rejects(read(), /No stall is open/);
+  await assert.rejects(mutate(() => {}), /No stall is open/);
+  await assert.rejects(replaceAll(initialState(), {}), /No stall is open/);
+  assert.equal(await raw('root'), undefined, 'no legacy key is invented');
+  // A reload stays empty.
+  closeDB();
+  assert.equal((await init()).state, null);
+});
+
+test('create, open, leave and delete stalls', async () => {
+  await wipe();
+  await init();
+  const a = await createStall(stall('Chai Point', 'chai-maggi'));
+  assert.match(a.entry.id, /^[0-9a-f-]{36}$/);
+  assert.equal(a.entry.key, `stall:${a.entry.id}`);
+  assert.equal(a.entry.cloud, null);
+  assert.ok(a.entry.openedAt);
+  assert.equal(a.state.revision, 1);
+  assert.equal((await getMeta()).activeStallId, a.entry.id, 'a new stall becomes active');
+  assert.equal((await read()).config.profile.stallName, 'Chai Point');
+
+  const b = await createStall(stall('Momo Corner', 'momo-corner'));
+  assert.equal((await getMeta()).activeStallId, b.entry.id);
+  const bg = await createStall(stall('Background'), {open: false});
+  assert.equal((await getMeta()).activeStallId, b.entry.id, '{open: false} keeps the active stall');
+  assert.equal(bg.entry.openedAt, null);
+
+  const opened = await openStall(a.entry.id);
+  assert.equal(opened.config.profile.stallName, 'Chai Point');
+  let meta = await getMeta();
+  assert.equal(meta.activeStallId, a.entry.id);
+  assert.deepEqual(meta.stalls.map(e => e.summary.name), ['Chai Point', 'Momo Corner', 'Background']);
+  await assert.rejects(openStall('nope'), /on this phone/);
+
+  await leaveStall();
+  meta = await getMeta();
+  assert.equal(meta.activeStallId, null);
+  assert.equal(meta.stalls.length, 3, 'leaving keeps the data');
+  await assert.rejects(read(), /No stall is open/);
+  closeDB();
+  assert.equal((await init()).state, null, 'a reload after leaving lands outside any stall');
+
+  await openStall(b.entry.id);
+  await deleteStall(b.entry.id);
+  meta = await getMeta();
+  assert.equal(meta.activeStallId, null, 'deleting the open stall leaves nothing open');
+  assert.deepEqual(meta.stalls.map(e => e.id), [a.entry.id, bg.entry.id]);
+  assert.equal(await raw(b.entry.key), undefined, 'its state is gone');
+  assert.equal((await readStall(a.entry.id)).config.profile.stallName, 'Chai Point', 'other stalls are untouched');
+  await assert.rejects(deleteStall(b.entry.id), /on this phone/);
+});
+
+test('stalls are isolated: sales, config, PIN and revisions stay in their own stall', async () => {
+  await wipe();
+  await init();
+  const a = await createStall(stall('Stall A'));
+  await mutate(st => {
+    createOrder(st.live, st.config, {id: uuid(), items: [makeLine(st.config, 'lemon-fizz')]});
+    st.pin = {salt: 's', hash: 'a'.repeat(64)};
+  });
+  const b = await createStall(stall('Stall B'));
+  const inB = await read();
+  assert.equal(inB.config.profile.stallName, 'Stall B');
+  assert.equal(inB.live.orders.length, 0);
+  assert.equal(inB.pin, null);
+  await mutate(st => {
+    st.config.profile.stallName = 'Stall B renamed';
+  });
+  const back = await openStall(a.entry.id);
+  assert.equal(back.config.profile.stallName, 'Stall A');
+  assert.equal(back.live.orders.length, 1);
+  assert.equal(back.revision, 2);
+  assert.equal((await readStall(b.entry.id)).config.profile.stallName, 'Stall B renamed');
+  // A tab that still thinks stall B is open can't write into stall A.
+  await assert.rejects(mutate(st => { st.config.profile.stallName = 'Wrong'; }, {stallId: b.entry.id}), /different stall/);
+  assert.equal((await read()).config.profile.stallName, 'Stall A');
+  const ok = await mutate(st => st.live.orders.length, {stallId: a.entry.id});
+  assert.equal(ok.output, 1);
+  assert.equal(ok.stallId, a.entry.id);
+});
+
+test('the index summary is refreshed on every committed write (orders, sum of payments, live non-void bills, look)', async () => {
+  await wipe();
+  await init();
+  const {entry} = await createStall(stall('Summary Stall', 'momo-corner'));
+  const s0 = entry.summary;
+  assert.equal(s0.name, 'Summary Stall');
+  assert.equal(s0.booth, 'Stall No. 1');
+  assert.equal(s0.themeId, 'momo-corner');
+  assert.match(s0.accent, /^#[0-9A-Fa-f]{6}$/);
+  assert.ok(Array.isArray(s0.heroArt) && s0.heroArt.length > 0);
+  assert.deepEqual([s0.orders, s0.collected, s0.bills, s0.currency], [0, 0, 0, 'INR']);
+  const before = entry.updatedAt;
+  await new Promise(r => setTimeout(r, 5));
+  let expectCollected = 0;
+  await mutate(st => {
+    for (const p of st.config.products.filter(x => x.price && !x.bundle).slice(0, 2)) {
+      createOrder(st.live, st.config, {id: uuid(), items: [makeLine(st.config, p.id)]});
+    }
+    expectCollected = report(st.live, st.config).collected;
+    addExpense(st.live, st.config, {id: 'e1', title: 'Gas', category: 'restock', amount: 25000});
+    addExpense(st.live, st.config, {id: 'e2', title: 'Typo', category: 'misc', amount: 999});
+    voidExpense(st.live, st.config, 'e2', 'Typo');
+    addExpense(st.demo, st.config, {id: 'e3', title: 'Practice', category: 'misc', amount: 100});
+    createOrder(st.demo, st.config, {id: uuid(), items: [makeLine(st.config, st.config.products.find(x => x.price && !x.bundle).id)]});
+    st.config.profile.booth = 'B-12';
+    st.config.theme.accent = '#123456';
+  });
+  const s1 = (await getMeta()).stalls[0];
+  assert.equal(s1.summary.orders, 2, 'live orders only');
+  assert.ok(expectCollected > 0);
+  assert.equal(s1.summary.collected, expectCollected);
+  assert.equal(s1.summary.bills, 25000, 'void and practice bills never count');
+  assert.equal(s1.summary.booth, 'B-12');
+  assert.equal(s1.summary.accent, '#123456');
+  assert.ok(s1.updatedAt > before, 'updatedAt moves on a write');
+  // replaceAll and writeStall refresh it too.
+  await replaceAll(stall('Restored'), {});
+  assert.equal((await getMeta()).stalls[0].summary.name, 'Restored');
+  assert.equal((await getMeta()).stalls[0].summary.orders, 0);
+  await writeStall(entry.id, stall('Pulled from cloud'));
+  assert.equal((await getMeta()).stalls[0].summary.name, 'Pulled from cloud');
+  assert.deepEqual(stallSummary(null), {name: '', booth: '', themeId: '', accent: '#FFDD35', heroArt: [], orders: 0, collected: 0, bills: 0, currency: 'INR'});
+});
+
+test('updateEntry merges fields and the cloud object; readStall/writeStall reach a background stall', async () => {
+  await wipe();
+  await init();
+  const a = await createStall(stall('Front'));
+  const b = await createStall(stall('Back'), {open: false});
+  let e = await updateEntry(b.entry.id, {cloud: {stallId: 'cloud1', code: 'MYS-ABCDE', revision: 0, dirty: true, status: 'pending'}});
+  assert.equal(e.cloud.code, 'MYS-ABCDE');
+  e = await updateEntry(b.entry.id, {cloud: {revision: 3, dirty: false, status: 'synced'}, id: 'hijack', key: 'root'});
+  assert.deepEqual([e.id, e.key], [b.entry.id, b.entry.key], 'id and key never change');
+  assert.deepEqual([e.cloud.stallId, e.cloud.code, e.cloud.revision, e.cloud.dirty, e.cloud.status], ['cloud1', 'MYS-ABCDE', 3, false, 'synced']);
+  assert.equal((await getMeta()).stalls[1].cloud.revision, 3);
+  e = await updateEntry(b.entry.id, {cloud: null});
+  assert.equal(e.cloud, null);
+  await assert.rejects(updateEntry('missing', {}), /on this phone/);
+
+  const pulled = stall('Back v2');
+  pulled.revision = 41;
+  const stored = await writeStall(b.entry.id, pulled);
+  assert.equal(stored.revision, 41, 'stored as given');
+  assert.equal((await readStall(b.entry.id)).config.profile.stallName, 'Back v2');
+  assert.equal((await read()).config.profile.stallName, 'Front', 'the active stall is untouched');
+  assert.equal((await getMeta()).activeStallId, a.entry.id);
+  await assert.rejects(writeStall(b.entry.id, {nope: true}), /not a ManageYourStall stall/);
+});
+
+test('an unlisted legacy root (old cached tab) is recovered as an extra entry; old tabs keep sharing key root', async () => {
+  await wipe();
+  await init();
+  const a = await createStall(stall('New App Stall'));
+  // An old single-stall tab writes its own state at 'root', unaware of the index.
+  const legacy = initialState();
+  legacy.onboarded = true;
+  legacy.config.profile.stallName = 'Old Tab Stall';
+  await raw('root', legacy);
+  closeDB();
+  const {meta, state} = await init();
+  assert.equal(state.config.profile.stallName, 'New App Stall', 'the active stall stays active');
+  assert.equal(meta.activeStallId, a.entry.id);
+  assert.equal(meta.stalls.length, 2);
+  const rec = meta.stalls.find(e => e.id === 'root');
+  assert.equal(rec.key, 'root');
+  assert.equal(rec.summary.name, 'Recovered stall');
+  // Booting again doesn't add it twice.
+  closeDB();
+  assert.equal((await init()).meta.stalls.length, 2);
+  // Opening it shows the old tab's data; writes land at 'root' so the old tab sees them too.
+  await openStall('root');
+  await mutate(st => { st.config.profile.booth = 'Shared'; });
+  assert.equal((await raw('root')).config.profile.booth, 'Shared');
+  assert.equal((await getMeta()).stalls.find(e => e.id === 'root').summary.name, 'Old Tab Stall');
+});
+
+test('media: prune keeps photos of inactive stalls; deleting or resetting a stall removes only its own', async () => {
+  await wipe();
+  await init();
+  const a = await createStall(stall('Photo A'));
+  for (const id of ['a-prod', 'a-bill', 'b-hero', 'shared', 'orphan']) await putMedia(id, PNG);
+  await mutate(st => {
+    st.config.products[0].image = 'media:a-prod';
+    st.config.products[1].image = 'media:shared';
+    addExpense(st.live, st.config, {id: 'x', title: 'Bill', category: 'misc', amount: 100, billImage: 'media:a-bill'});
+  });
+  const b = await createStall(stall('Photo B'));
+  await mutate(st => {
+    st.config.theme.heroImage = 'media:b-hero';
+    st.config.products[0].image = 'media:shared';
+  });
+  await leaveStall();
+  assert.equal(await pruneMedia(), 1, 'only the orphan goes, even with no stall open');
+  assert.deepEqual(Object.keys(await getAllMedia()).sort(), ['a-bill', 'a-prod', 'b-hero', 'shared']);
+  assert.deepEqual(Object.keys(await getMediaFor(await readStall(b.entry.id))).sort(), ['b-hero', 'shared']);
+
+  // Factory-resetting stall A keeps B's photos (and the one they share).
+  await openStall(a.entry.id);
+  await replaceAll(stall('Photo A reset'), {'a-new': GIF});
+  assert.deepEqual(Object.keys(await getAllMedia()).sort(), ['a-new', 'b-hero', 'shared']);
+  await mutate(st => { st.config.products[0].image = 'media:a-new'; });
+
+  // Deleting B removes its hero and the photo only it still used; A's photo stays.
+  await deleteStall(b.entry.id);
+  assert.deepEqual(Object.keys(await getAllMedia()).sort(), ['a-new']);
+});
+
+test('concurrency: parallel sales in one stall and parallel stall creation never lose writes', async () => {
+  await wipe();
+  await init();
+  const made = await Promise.all(Array.from({length: 6}, (_, i) => createStall(stall(`Stall ${i}`), {open: false})));
+  const meta = await getMeta();
+  assert.equal(meta.stalls.length, 6);
+  assert.equal(new Set(made.map(m => m.entry.id)).size, 6);
+  await openStall(made[2].entry.id);
+  await Promise.all([
+    ...Array.from({length: 8}, () => mutate(st => createOrder(st.live, st.config, {id: uuid(), items: [makeLine(st.config, 'lemon-fizz')]}))),
+    updateEntry(made[2].entry.id, {cloud: {status: 'pending', dirty: true}}),
+    updateEntry(made[3].entry.id, {cloud: {status: 'synced', dirty: false}}),
+  ]);
+  const st = await read();
+  assert.equal(st.live.orders.length, 8);
+  const after = await getMeta();
+  const e2 = after.stalls.find(e => e.id === made[2].entry.id);
+  assert.equal(e2.summary.orders, 8, 'summary follows the last write');
+  assert.equal(e2.cloud.status, 'pending', 'entry patches interleaved with writes survive');
+  assert.equal(after.stalls.find(e => e.id === made[3].entry.id).cloud.status, 'synced');
+  assert.equal((await readStall(made[3].entry.id)).live.orders.length, 0);
 });

@@ -1,5 +1,5 @@
 // Shared Playwright helpers for ManageYourStall browser specs (owner: lead).
-// Usage: import {ready, act, go, unlockAdmin, noOverflow, sheet, state} from './helpers.mjs';
+// Usage: import {ready, act, go, unlockAdmin, noOverflow, sheet, state, addStall, stallsMeta} from './helpers.mjs';
 import {expect} from '@playwright/test';
 
 /** First visible element with data-action="name" (optional extra selector, e.g. '[data-id="samosa"]'). */
@@ -9,13 +9,28 @@ export const act = (page, name, extra = '') => page.locator(`[data-action="${nam
 export const sheet = page => page.locator('#sheet');
 
 /**
- * Open the app on a fresh device (each Playwright test has its own empty IndexedDB) and wait until boot hooks ran.
- * Fresh installs show onboarding; by default it is skipped so the sample "Snacks & Pizza" stall is ready to sell.
+ * Open the app and wait until boot hooks ran. Each Playwright test starts on a fresh device (empty IndexedDB), which now
+ * has NO stall and lands on the #/welcome page (§17.2). By default (`stall: true`) the sample "Snacks & Pizza" stall is
+ * then created exactly like a first install used to be — storage.createStall(domain.initialState()) + core.openStallById —
+ * and its first-run onboarding is skipped (`onboarding: 'keep'` leaves it open). `{stall: false}` leaves the device empty.
+ * A device that already has an open stall (e.g. after a reload) just opens it.
  */
-export async function ready(page, {onboarding = 'skip', path = '/'} = {}) {
+export async function ready(page, {onboarding = 'skip', path = '/', stall = true} = {}) {
   await page.goto(path);
   await page.waitForFunction(() => document.documentElement.dataset.booted === '1', null, {timeout: 15000});
+  if (!stall) return;
+  const fresh = await page.evaluate(async () => {
+    const core = await import('/ui/core.mjs');
+    if (core.hasStall()) return false;
+    const storage = await import('/storage.mjs');
+    const domain = await import('/domain.mjs');
+    const {entry} = await storage.createStall(domain.initialState());
+    await core.openStallById(entry.id);
+    return true;
+  });
   await expect(page.locator('.app-shell')).toBeVisible();
+  const onboarded = await page.evaluate(() => import('/ui/core.mjs').then(m => !!m.store.state?.onboarded));
+  if (fresh && !onboarded) await expect(page.locator('#sheet[open][data-kind="onboarding"]')).toBeVisible();
   if (onboarding === 'skip') {
     const skip = page.locator('#sheet[open] [data-action="onb-skip"]');
     if (await skip.count()) {
@@ -24,6 +39,28 @@ export async function ready(page, {onboarding = 'skip', path = '/'} = {}) {
     }
   }
 }
+
+/**
+ * Add another stall on this device through the storage API (§17.1) and, unless `open: false`, open it in the UI.
+ * @returns {Promise<string>} the new stall's entry id
+ */
+export async function addStall(page, {name = 'Second Stall', templateId = '', onboarded = true, open = true} = {}) {
+  return page.evaluate(async ({name, templateId, onboarded, open}) => {
+    const storage = await import('/storage.mjs');
+    const domain = await import('/domain.mjs');
+    const core = await import('/ui/core.mjs');
+    const st = domain.initialState(templateId ? {templateId} : {});
+    st.onboarded = onboarded;
+    st.config.profile.stallName = name;
+    const {entry} = await storage.createStall(st, {open: false});
+    if (open) await core.openStallById(entry.id);
+    else await core.refreshMeta();
+    return entry.id;
+  }, {name, templateId, onboarded, open});
+}
+
+/** The stalls index of this device (storage.getMeta). */
+export const stallsMeta = page => page.evaluate(() => import('/storage.mjs').then(m => m.getMeta()));
 
 /** Navigate with the visible nav (sidebar on desktop, bottom nav on phones) or the More hub fallback. */
 export async function go(page, screen) {

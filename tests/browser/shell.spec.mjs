@@ -3,6 +3,7 @@
 // identity, cashier switch, admin PIN dialog stacking over sheets, confirm sheets, offline pill and overflow at every width.
 import {test, expect} from '@playwright/test';
 import {createHash} from 'node:crypto';
+import {ready} from './helpers.mjs';
 
 /** @param {import('@playwright/test').Page} page */
 const isPhone = page => (page.viewportSize()?.width || 1440) <= 767;
@@ -15,8 +16,7 @@ const isRail = page => !isPhone(page) && (page.viewportSize()?.width || 1440) <=
  * @param {{profile?: object, mode?: 'live'|'demo', pin?: {salt: string, hash: string}, order?: boolean}} [patch]
  */
 async function openStall(page, patch = {}) {
-  await page.goto('/');
-  await expect(page.locator('.app-shell')).toBeVisible();
+  await ready(page);
   await page.evaluate(async p => {
     const storage = await import('./storage.mjs');
     const domain = await import('./domain.mjs');
@@ -64,7 +64,7 @@ test.describe('app shell', () => {
   });
 
   test('boots with the MYS mark and the "created by viraj" credit visible', async ({page}) => {
-    await page.goto('/');
+    await ready(page);
     await expect(page).toHaveTitle(/ManageYourStall/);
     await expect(page.locator('.app-shell')).toBeVisible();
     await expect(page.locator('#main h1')).toBeVisible();
@@ -314,8 +314,7 @@ test.describe('app shell', () => {
   });
 
   test('Stall’s Collab shows its COMING SOON pill on first load, inside the viewport', async ({page}) => {
-    await page.goto('/');
-    await page.waitForFunction(() => document.documentElement.dataset.booted === '1', null, {timeout: 15000});
+    await ready(page);
     const pill = page.locator('.nav-soon:visible');
     await expect(pill).toHaveCount(1);
     // Same accessible text everywhere; the rail and the phone bottom nav show the short "SOON".
@@ -442,5 +441,83 @@ test.describe('app shell', () => {
     // The COMING SOON pill follows the theme secondary.
     await expect(page.locator('.nav-soon:visible')).toHaveCSS('background-color', 'rgb(185, 243, 107)');
     await expect(page.locator('.nav-soon:visible')).toHaveCSS('color', 'rgb(23, 23, 23)');
+  });
+
+  test('Your stalls and Leave this stall: sidebar / rail / cashier sheet (§17.2)', async ({page}) => {
+    await openStall(page, {profile: {stallName: 'Chai Point'}});
+    const side = page.locator('.shell-stall-links [data-action="your-stalls"]');
+    const rail = page.locator('.shell-rail-stalls');
+    if (isPhone(page)) {
+      await expect(side).toBeHidden();
+      await expect(rail).toBeHidden();
+    } else if (isRail(page)) {
+      await expect(side).toBeHidden();
+      await expect(rail).toBeVisible();
+      expect((await rail.boundingBox()).height).toBeGreaterThanOrEqual(44);
+    } else {
+      await expect(side).toBeVisible();
+      await expect(page.locator('.shell-stall-links [data-action="leave-stall"]')).toBeVisible();
+      for (const b of await page.locator('.shell-stall-links button').all()) expect((await b.boundingBox()).height).toBeGreaterThanOrEqual(44);
+    }
+    await expectNoHorizontalOverflow(page);
+
+    // Cashier sheet → Your stalls: a full-screen page (no shell); Back returns to the counter.
+    await openOperatorSheet(page);
+    await expect(page.locator('#sheet .shell-sheet-stall')).toContainText('Leaving keeps every sale saved');
+    await page.locator('#sheet [data-action="your-stalls"]').click();
+    await expect(page).toHaveURL(/#\/stalls/);
+    await expect(page.locator('#sheet[open]')).toHaveCount(0);
+    await expect(page.locator('.app-shell')).toHaveCount(0);
+    await expect(page.locator('html')).toHaveAttribute('data-view', 'page');
+    await page.goBack();
+    await expect(page.locator('.app-shell')).toBeVisible();
+    await expect(page.locator('html')).toHaveAttribute('data-view', 'stall');
+    await expect(page).toHaveTitle('Chai Point · ManageYourStall');
+
+    // Leave this stall asks first, then lands on the welcome page; the data stays on the device.
+    await openOperatorSheet(page);
+    await page.locator('#sheet [data-action="leave-stall"]').click();
+    await expect(page.locator('#sheet[data-kind="confirm"]')).toContainText('Chai Point');
+    await page.locator('#sheet [data-action="core-confirm"]').click();
+    await expect(page).toHaveURL(/#\/welcome/);
+    await expect(page.locator('.app-shell')).toHaveCount(0);
+    await expect(page.locator('#toast')).toContainText('Left Chai Point');
+    const meta = await page.evaluate(() => import('./storage.mjs').then(m => m.getMeta()));
+    expect(meta.activeStallId).toBe(null);
+    expect(meta.stalls.map(e => e.summary.name)).toEqual(['Chai Point']);
+    expect(await page.evaluate(() => import('./ui/core.mjs').then(m => [m.hasStall(), m.store.state, m.currentPage()]))).toEqual([false, null, 'welcome']);
+    await page.reload();
+    await page.waitForFunction(() => document.documentElement.dataset.booted === '1');
+    await expect(page.locator('.app-shell')).toHaveCount(0);
+    await expect(page.locator('.credit-badge:visible').first()).toHaveText('created by viraj');
+  });
+
+  test('cloud pill shows only for a linked stall and follows its sync status', async ({page}) => {
+    await openStall(page);
+    await expect(page.locator('.cloud-pill')).toHaveCount(0);
+    const link = status => page.evaluate(async s => {
+      const storage = await import('./storage.mjs');
+      const core = await import('./ui/core.mjs');
+      await storage.updateEntry(core.store.stallId, {cloud: {stallId: 'cloud-test', code: 'MYS-ABCDE', ownerLoginId: null, revision: 2,
+        dirty: false, status: s, syncedAt: new Date().toISOString(), lastError: s === 'error' ? 'Upload failed' : null, access: 'owner'}});
+    }, status);
+    await link('synced');
+    await page.reload();
+    await page.waitForFunction(() => document.documentElement.dataset.booted === '1');
+    const pill = page.locator('.topbar .cloud-pill');
+    await expect(pill).toBeVisible();
+    await expect(pill).toHaveAttribute('data-cloud', 'synced');
+    await expect(pill).toHaveAttribute('aria-label', /Synced/);
+    const box = await pill.boundingBox();
+    expect(box.height).toBeGreaterThanOrEqual(isPhone(page) ? 44 : 34);
+    await expectNoHorizontalOverflow(page);
+    await link('conflict');
+    await page.reload();
+    await page.waitForFunction(() => document.documentElement.dataset.booted === '1');
+    await expect(pill).toHaveAttribute('data-cloud', 'conflict');
+    await expect(pill).toHaveClass(/tone-bad/);
+    await expect(pill).toHaveAttribute('aria-label', /Needs attention/);
+    await pill.click();
+    await expect(page).toHaveURL(/#\/stalls/);
   });
 });

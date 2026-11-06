@@ -12,7 +12,8 @@ import {
   ordersCsvRows, orderSummaryCsvRows, paymentsCsvRows, expensesCsvRows, contributionsCsvRows, settlementCsvRows, csv, exportBackup,
   validateBackup, session, initialState, audit, report, refreshMilestones, expenseTotals, referencedMedia,
 } from '../domain.mjs';
-import {getAllMedia, replaceAll} from '../storage.mjs';
+import {getMediaFor, replaceAll} from '../storage.mjs';
+import * as cloud from '../cloud.mjs';
 import {istDate, slug} from '../util.mjs';
 
 /** localStorage key for the "last backup" hint (a per-device convenience, never a source of truth). */
@@ -155,6 +156,20 @@ const backupFirst = () =>
 const exportButton = (kind, iconName, title, sub, cls = '') =>
   `<button type="button" class="data-export-btn${cls ? ' ' + cls : ''}" data-action="data-export" data-kind="${kind}"><span class="data-export-icon">${icon(iconName)}</span><span class="grow"><strong>${title}</strong><small>${sub}</small></span>${icon('download', 'data-export-arrow')}</button>`;
 
+/** The open stall's index entry when it is linked to the cloud, else null. */
+function linkedEntry() {
+  const entry = store.meta?.stalls?.find(/** @param {any} e */ e => e.id === store.stallId);
+  return entry?.cloud ? entry : null;
+}
+
+/** A restore replaced the open stall outside commit(): queue a cloud push for a linked stall (never throws). */
+function syncAfterReplace() {
+  if (!linkedEntry() || !store.stallId) return;
+  Promise.resolve()
+    .then(() => cloud.markDirty(String(store.stallId)))
+    .catch(err => console.warn(err));
+}
+
 function backupsSheet() {
   const st = store.state;
   const mode = modeLabel(st.mode);
@@ -164,8 +179,11 @@ function backupsSheet() {
   <div class="data-hero">
     <span class="data-hero-icon">${icon('phone')}</span>
     <div class="grow">
-      <strong>Your sales live only in this browser.</strong>
-      <p>No cloud, no sync. Download a backup after every rush and send it to yourself — clearing browser data or losing the phone wipes the stall.</p>
+      ${linkedEntry()
+        ? `<strong>Saved on this phone + in your MYS account.</strong>
+      <p>The cloud copy syncs whenever there’s internet. A backup file after every rush is still a smart extra copy.</p>`
+        : `<strong>Your sales live only on this phone.</strong>
+      <p>Not in the cloud yet — save it from <b>Your stalls</b>, or download a backup after every rush and send it to yourself. Clearing browser data or losing the phone wipes the stall.</p>`}
       <span class="badge ${hint.stale ? 'coral' : 'lime'}" data-backup-hint>${icon(hint.stale ? 'alert' : 'check')} ${esc(hint.text)}</span>
     </div>
   </div>
@@ -225,7 +243,7 @@ async function exportData(kind) {
   const name = slug(C().profile.stallName);
   const day = istDate();
   if (kind === 'json') {
-    const media = await getAllMedia();
+    const media = await getMediaFor(st); // only this stall's photos, never another stall's
     const backup = exportBackup(st, media);
     download(`mys-backup-${name}-${day}.json`, JSON.stringify(backup), 'application/json');
     noteBackup();
@@ -335,6 +353,7 @@ function confirmRestore() {
       });
       pendingRestore = null;
       lockAdmin();
+      syncAfterReplace();
       await reloadMedia().catch(() => {});
       closeSheet();
       render();
@@ -482,14 +501,18 @@ function factoryReset() {
   confirmSheet({
     title: 'Factory reset entire stall?',
     body: `<div class="notice danger">${icon('alert')}<div>Everything on this device goes: <b>${plural(st.live.orders.length, 'live order')}</b>, ${plural(st.demo.orders.length, 'practice order')}, the menu, photos, stall profile, team and the admin PIN.</div></div>
+      ${linkedEntry() ? '<p>The cloud copy stays safe in your MYS account — this phone just stops syncing to it. Download it again anytime from <b>Your stalls</b>.</p>' : ''}
       ${backupFirst()}`,
     confirmLabel: 'Wipe everything',
     danger: true,
     typed: 'FACTORY RESET',
     onConfirm: async () => {
+      const linked = linkedEntry();
       await asAdmin(async () => {
         store.state = await replaceAll(nextRevision(initialState()), {});
       });
+      // A wiped stall must never overwrite the cloud copy: forget the link on this phone (the account keeps the stall).
+      if (linked) await Promise.resolve(cloud.unlinkStall(linked.id)).catch(err => console.warn(err));
       pendingRestore = null;
       lockAdmin();
       forgetBackup();

@@ -24,6 +24,9 @@ const ASSETS = [
   './css/more.css',
   './css/money.css',
   './css/collab.css',
+  './css/landing.css',
+  './css/setup.css',
+  './css/stalls.css',
   './util.mjs',
   './constants.mjs',
   './library.mjs',
@@ -54,6 +57,12 @@ const ASSETS = [
   './ui/data.mjs',
   './ui/money.mjs',
   './ui/collab.mjs',
+  './ui/landing.mjs',
+  './ui/setup.mjs',
+  './ui/stalls.mjs',
+  './ui/account.mjs',
+  './cloud.mjs',
+  './config.mjs',
 ];
 
 self.addEventListener('install', event => {

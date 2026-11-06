@@ -967,3 +967,167 @@ Dashboard gets "+ Quick mid-stall restock" (`money-restock`) and "Add bill" butt
 `library.useSprite(true)`; from then on `artSvg()` and `heroSvg()` emit `<use href="#mys-art-<id>">` instead of inlining each
 illustration, which keeps re-renders about 3x smaller. With sprite mode off (Node and unit tests) the output is exactly the inline
 markup described in §7.
+
+---
+
+## 17. Phase 3 — landing page, multiple stalls, accounts & cloud (Convex)
+
+Goal: MYS becomes a multi-stall product. A first-time visitor lands on a bold **MYS landing page**, sets up a stall with a
+smooth **step-by-step wizard**, and can keep any number of stalls on the device. An optional **MYS account** (login ID +
+password) stores stalls in the cloud (Convex) so they can be opened on another phone. The counter stays **offline-first**:
+every sale is saved to IndexedDB first; the cloud copy syncs in the background whenever there is internet.
+
+### 17.1 Local multi-stall storage (`storage.mjs`, owner: kernel agent)
+
+IndexedDB stays `packet-pataka-v1` v2 (stores `state`, `media`). The `state` store now holds:
+- `'meta'` → `StallsMeta { version: 1, activeStallId: string | null, stalls: StallEntry[] }`
+- one key per stall: `entry.key` (the legacy stall keeps key **`'root'`** forever so an old cached tab and the new app always
+  share the same data; new stalls use `'stall:<uuid>'`).
+
+```ts
+interface StallEntry {
+  id: string;            // 'root' for the legacy (v1/Phase-1) stall, else a uuid
+  key: string;           // IndexedDB key of its State
+  createdAt: ISO; updatedAt: ISO; openedAt: ISO | null;
+  summary: { name: string; booth: string; themeId: string; accent: string; heroArt: string[]; orders: number;
+             collected: Paise; bills: Paise; currency: 'INR' };          // refreshed on every committed write
+  cloud: null | { stallId: string; code: string; ownerLoginId: string | null; revision: number;   // last synced cloud revision
+                  dirty: boolean; status: 'synced' | 'pending' | 'offline' | 'conflict' | 'error' | 'syncing';
+                  syncedAt: ISO | null; lastError: string | null; access: 'owner' | 'team' };
+}
+```
+Boot migration (inside one transaction): no `'meta'` + existing `'root'` → meta with one entry `{id:'root', key:'root'}`
+active (so the existing Packet Pataka stall opens straight away, exactly as before). No meta and no root → empty meta, active
+null (new visitor → landing page). Meta present but an unlisted `'root'` exists (an old cached tab created it) → add it as an
+extra entry named "Recovered stall".
+
+API (all async; one strict-durability transaction each; broadcast `{type:'meta'|'state', stallId}` on BroadcastChannel
+`mys-ledger`):
+```js
+init() → { meta, state }            // state of the active stall (migrated) or null
+getMeta() → StallsMeta
+createStall(state) → { entry, state }              // new uuid entry + key, becomes active, onboarded state
+openStall(id) → state                               // sets active, openedAt
+leaveStall()                                         // active = null; data stays on the device
+deleteStall(id)                                      // removes its state + entry, then prunes media
+readStall(id) → State · writeStall(id, state)        // non-active access (cloud pull)
+updateEntry(id, patch)                               // e.g. cloud status (merges cloud object)
+mutate(fn) / read() / replaceAll(state, media)       // unchanged semantics, on the ACTIVE stall (throw if none)
+pruneMedia()                                         // keeps media referenced by ANY stall
+onExternalChange(fn)                                 // fn({type, stallId})
+```
+
+### 17.2 Kernel & routing (`ui/core.mjs`, `app.mjs`, owner: kernel agent)
+
+`store.state` is `null` when no stall is active. Outside-the-stall pages are registered with
+`registerPage(name, renderFn)` and rendered full-screen **without** the stall shell. Routes are hash based:
+`#/welcome` (landing), `#/setup`, `#/stalls`, `#/login`, `#/signup`, `#/join`, `#/account`. Kernel exports:
+`registerPage`, `goPage(name)` (sets `location.hash`, renders), `currentPage()`, `openStallById(id)` (storage.openStall → store
+.state → reloadMedia → `location.hash = ''` → render), `leaveCurrentStall()` (flush pending cloud sync → storage.leaveStall →
+store.state = null → goPage('welcome')), `hasStall()`, `onCommitted(fn)` (called after every successful commit with
+`{stallId, state}` — the cloud sync engine subscribes). render(): no active stall or an outside page in the hash → page;
+otherwise the shell. Boot: active stall → stall app (unless the hash names an outside page); no active stall →
+`#/welcome` (or the hashed page). The old first-run onboarding sheet only runs for an active stall whose `onboarded` is false.
+Shell additions (shell.mjs): sidebar/brand area and the cashier (avatar) sheet get **Your stalls** (`goPage('stalls')`) and
+**Leave this stall** (`leaveCurrentStall`); a small cloud status pill (Saved on device / Synced ✓ / Syncing… / Offline – will
+sync / Needs attention) when the stall is linked.
+
+### 17.3 Convex backend (`convex/`, owner: backend agent)
+
+Project **manageyourstall** in the `viraj-vishwakarma` team. Public URL in `dist/config.mjs` (`export const CONVEX_URL`).
+All user-facing errors are thrown as `ConvexError('short friendly message')`.
+
+Tables (`convex/schema.ts`):
+- `users { loginId (normalized: trimmed, lowercased), name, passwordHash, passwordSalt, createdAt, lastLoginAt }` · index `by_loginId`
+- `sessions { tokenHash, kind: 'user' | 'stall', userId?: Id<'users'>, stallId?: Id<'stalls'>, deviceId, deviceLabel, createdAt, expiresAt }` · index `by_tokenHash`, `by_user`
+- `loginAttempts { key, failures, lockedUntil, updatedAt }` · index `by_key`
+- `stalls { ownerId, code /* 'MYS-' + 5 chars of 'ABCDEFGHJKMNPQRSTUVWXYZ23456789' */, name, booth, themeId, accent, heroArt: string[], eventName, city,
+  teamPasswordHash?, teamPasswordSalt?, snapshotId?: Id<'_storage'>, revision: number, snapshotBytes, snapshotAt?, snapshotDevice?,
+  summary { orders, collected, bills }, archived: boolean, createdAt, updatedAt }` · index `by_owner`, `by_code`
+
+Auth (custom, no third-party keys): passwords hashed with Node `crypto.scrypt` (N=16384, r=8, p=1, 64-byte key, 16-byte random
+salt) inside `"use node"` actions; verification uses `timingSafeEqual`. Session token = 32 random bytes (base64url) returned once;
+only its SHA-256 hex is stored; 60-day expiry. Login lockout: 5 failures per key → lock 1 min, doubling up to 1 h.
+Login ID rules: 3–60 chars, letters/digits/`._@+-` (an email, phone number or username). Password: 6–100 chars.
+
+Functions (args always include `token` where auth is needed; `deviceId`, `deviceLabel` on session creation):
+```
+auth:signUp      (action)   {loginId, password, name, deviceId, deviceLabel} → {token, user}
+auth:logIn       (action)   {loginId, password, deviceId, deviceLabel}       → {token, user}
+auth:logOut      (mutation) {token}
+auth:me          (query)    {token} → null | {user: {id, loginId, name}, kind, stallId?}
+auth:changePassword (action){token, oldPassword, newPassword}               // signs out other sessions
+auth:updateProfile (mutation){token, name}
+stalls:list      (query)    {token} → [{id, code, name, booth, themeId, accent, heroArt, eventName, city, revision, snapshotAt,
+                                        snapshotDevice, summary, hasTeamPassword, createdAt, updatedAt}]   (owner: own stalls; team session: its stall)
+stalls:create    (mutation) {token, info: {name, booth, themeId, accent, heroArt, eventName, city}} → {id, code}
+stalls:updateInfo(mutation) {token, stallId, info}
+stalls:remove    (mutation) {token, stallId}          // owner only; deletes the snapshot file too
+stalls:generateUploadUrl (mutation) {token} → url
+stalls:commitSnapshot (mutation) {token, stallId, storageId, baseRevision, bytes, summary, info, device, force?}
+                         → {ok: true, revision} | {ok: false, conflict: true, revision, snapshotAt, snapshotDevice}
+                         // conflict when baseRevision !== stall.revision (unless force); a rejected upload is deleted
+stalls:getSnapshot (query) {token, stallId} → null | {url, revision, snapshotAt, snapshotDevice, bytes}
+stalls:setTeamPassword (action) {token, stallId, password | null}   // owner only; null removes team access
+stalls:join      (action)   {code, password, deviceId, deviceLabel} → {token, stall: {id, code, name}}   // team session for one stall
+```
+Snapshot = the JSON produced by `exportBackup(state, media)` (includes photos), uploaded with an upload URL; downloads are
+validated with `validateBackup` before use. Team sessions can list/get/commit only their stall and can't remove it or change
+passwords.
+
+### 17.4 Cloud client & sync (`dist/cloud.mjs`, owner: cloud agent)
+
+No SDK: calls the Convex HTTP API with `fetch` — `POST ${CONVEX_URL}/api/{query|mutation|action}` with
+`{path: 'stalls:list', args, format: 'json'}` → `{status: 'success', value}` | `{status: 'error', errorMessage, errorData}`
+(user message = `errorData` when it is a string, else a generic message). Exports:
+```js
+cloudReady() → boolean (CONVEX_URL set) · session() → {token, user, kind, stallId} | null (localStorage 'mys-session')
+signUp({loginId, password, name}) · logIn({loginId, password}) · logOut() · me() · changePassword(old, new) · updateName(name)
+listCloudStalls() · linkStall(entryId)        // create in cloud + first push; entry.cloud set
+pushStall(entryId, {force}) · pullStall(entryId | {cloudStallId}) → opens/updates a local entry
+joinStall({code, password})                    // team session + download
+setTeamPassword(entryId, password | null) · removeCloudStall(entryId)
+startSync()                                    // subscribes to core.onCommitted; debounced push (4 s) of dirty linked stalls when
+                                               // online + signed in; retries on 'online'; pushes on visibilitychange hidden
+syncState(entryId) → status for the UI · onSyncChange(fn)
+deviceId() (localStorage 'mys-device' uuid) · deviceLabel() ('Chrome on Android' etc.)
+```
+Conflict (cloud revision moved on another device): status 'conflict' — never auto-overwrite; UI offers **Use this device's
+copy** (force push) or **Use the cloud copy** (download a local backup file first, then pull).
+
+### 17.5 Pages (owners: landing agent, setup agent, stalls agent)
+
+- **Landing `#/welcome`** (`ui/landing.mjs`, `css/landing.css`): a wild, joyful Neo-Brutalist marketing page — giant MYS
+  sticker logo with "created by viraj", floating food-sticker collage (library art), punchy headline, CTAs **Start my stall**
+  (`#/setup`), **Log in** (`#/login`), **Your stalls** (when the device has stalls), **Join a team stall** (`#/join`); feature
+  grid (themes, UPI QR, tokens & kitchen queue, bills & payouts, offline, WhatsApp reports), "how it works" in 3 steps, a
+  Stall's Collab COMING SOON teaser, footer. No fake testimonials or stats. Fast, responsive (320–1440), reduced-motion aware.
+- **Setup wizard `#/setup`** (`ui/setup.mjs`, `css/setup.css`): full-page, one question per step, progress bar, Back/Next,
+  Enter = next, everything optional except the stall name: 1 Name (stall name; stall/booth number **optional — "No stall
+  number" skip**) → 2 What do you sell (6 themes + blank as hero cards; starter menu on/off; suggested prices on/off) → 3 Where &
+  when (event, venue, city, date — skippable) → 4 Your team (owner name + partner names — skippable) → 5 Get paid (UPI ID +
+  payee — skippable) → 6 Save to cloud (signed in: "Saved to your account"; signed out: create account / log in inline, or
+  "Keep it on this phone only") → 7 Ready (confetti, summary card) → **Open my stall**. Creates the stall with
+  `initialState({templateId, withPrices})` + `applyTheme` + profile/team/UPI + `onboarded: true` via `storage.createStall`,
+  links it to the cloud when signed in.
+- **Your stalls `#/stalls`** (`ui/stalls.mjs`, `css/stalls.css`): account card (signed in: name, login ID, Change password,
+  Log out; signed out: Log in / Create account); "On this phone" stall cards (hero mini, name, booth, theme accent, orders,
+  collected, last opened, sync badge) with **Open**, **Edit info** (name, booth optional, event, city, team members), **Team
+  access** (code + set/remove team password, owner only), **Save to cloud** / **Sync now**, **Delete from this phone** (typed
+  confirm; never deletes the cloud copy); "In your account, not on this phone" → **Download & open**; **+ Start a new stall**;
+  **Join a team stall**. Conflict and error states explained in plain words.
+- **Auth pages** (`ui/account.mjs`): `#/login`, `#/signup`, `#/join` (stall code + team password), `#/account` (name, change
+  password, log out everywhere-ish = log out this device). Friendly validation, show/hide password, no PIN involved
+  (the admin PIN stays a per-stall shared-phone guard).
+
+### 17.6 As built (notes)
+
+- The setup wizard creates stalls with `storage.createStall(state, {open: false})` and opens them only via `openStallById`, so
+  another tab never has its active stall switched behind its back. Team-session tokens live separately in localStorage
+  `mys-team`. A factory reset of a cloud-linked stall unlinks it on this phone, so the cloud copy can never be overwritten by
+  an empty stall. JSON backups include only the current stall's photos (`storage.getMediaFor`).
+- `auth:me` also returns `expiresAt` (and a `stall` object for team sessions); `stalls:updateInfo` returns the updated row;
+  `stalls:setTeamPassword` returns `{hasTeamPassword}`. Extra indexes: `sessions.by_stall`, `stalls.by_snapshot`. An hourly
+  cron deletes orphaned uploads, expired sessions and stale lockout rows.
+- `dist/config.mjs` uses the dev deployment for local runs and tests; the live site uses `PROD_URL` once
+  `npx convex deploy` has created the production deployment (until then it also uses the dev deployment).

@@ -1,0 +1,1099 @@
+/* Welcome page (ui/landing.mjs) — module styles (ARCHITECTURE.md §17.5). created by viraj
+   A loud, joyful Neo-Brutalist marketing page, full screen outside the stall shell. Mobile-first:
+   base = phone · @media (min-width: 768px) tablet · @media (min-width: 1024px) desktop. Only .land-* classes. */
+
+/* ------------------------------------------------------------------------------------------------------------------
+   Page frame & tints
+   ------------------------------------------------------------------------------------------------------------------ */
+.land {
+  position: relative;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  overflow-x: clip;
+  padding-bottom: var(--sp-3);
+}
+.land-wrap {
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding-inline: var(--sp-3);
+}
+.land-t-yellow { --t: var(--yellow); --t-soft: var(--yellow-soft); }
+.land-t-pink { --t: var(--pink); --t-soft: var(--pink-soft); }
+.land-t-mint { --t: var(--mint); --t-soft: var(--mint-soft); }
+.land-t-sky { --t: var(--sky); --t-soft: var(--sky-soft); }
+.land-t-lavender { --t: var(--lavender); --t-soft: var(--lavender-soft); }
+.land-t-lime { --t: var(--lime); --t-soft: var(--lime-soft); }
+.land-t-coral { --t: var(--coral); --t-soft: var(--coral-soft); }
+
+/* ------------------------------------------------------------------------------------------------------------------
+   Buttons (links styled as chunky stickers) & links
+   ------------------------------------------------------------------------------------------------------------------ */
+.land-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1);
+  min-height: 52px;
+  padding: var(--sp-2) var(--sp-4);
+  border: var(--line-thick);
+  border-radius: 14px;
+  background: var(--paper-2);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1.1;
+  text-align: center;
+  text-decoration: none;
+  box-shadow: var(--shadow);
+  transition: transform 0.09s ease, box-shadow 0.09s ease;
+  touch-action: manipulation;
+  user-select: none;
+}
+.land-btn .icon {
+  width: 20px;
+  height: 20px;
+}
+@media (hover: hover) {
+  .land-btn:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: var(--shadow-lg);
+  }
+  .land-btn:hover .land-arrow {
+    transform: translateX(6px);
+  }
+}
+.land-btn:active {
+  transform: translate(4px, 4px);
+  box-shadow: none;
+}
+.land-btn-primary {
+  background: var(--secondary);
+  color: var(--on-secondary);
+}
+.land-btn-yellow {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.land-btn-sky {
+  background: var(--sky);
+}
+.land-btn-paper {
+  background: var(--paper-2);
+}
+.land-btn-sm {
+  min-height: 46px;
+  padding: var(--sp-1) var(--sp-3);
+  font-size: 14px;
+  border-width: 2px;
+  box-shadow: var(--shadow-sm);
+}
+.land-btn-sm:active {
+  transform: translate(2px, 2px);
+}
+.land-btn-xl {
+  width: 100%;
+  min-height: 64px;
+  padding: var(--sp-3) var(--sp-4);
+  font-family: var(--font-display);
+  font-size: 22px;
+  letter-spacing: -0.01em;
+}
+.land-arrow {
+  display: inline-block;
+  font-size: 1.15em;
+  transition: transform 0.15s ease;
+}
+.land-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 24px;
+  height: 24px;
+  margin-left: calc(var(--sp-1) / 2);
+  padding: 0 calc(var(--sp-1) / 2);
+  border-radius: var(--r-pill);
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 13px;
+}
+.land-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+  min-height: 48px;
+  font-weight: 800;
+  text-decoration: underline;
+  text-decoration-thickness: 3px;
+  text-decoration-color: var(--secondary);
+  text-underline-offset: 5px;
+}
+.land-link:hover {
+  text-decoration-color: var(--ink);
+}
+
+/* ------------------------------------------------------------------------------------------------------------------
+   MYS sticker mark
+   ------------------------------------------------------------------------------------------------------------------ */
+.land-mark {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  color: var(--accent);
+  -webkit-text-stroke: 2px var(--ink);
+  paint-order: stroke fill;
+  text-shadow: 3px 3px 0 var(--ink);
+  background: var(--paper-2);
+  border: var(--line-thick);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  transform: rotate(-5deg) skewX(-9deg);
+  user-select: none;
+}
+.land-mark-mini {
+  font-size: 26px;
+  padding: calc(var(--sp-1) / 2) var(--sp-2) calc(var(--sp-1) / 2) var(--sp-1);
+  border-width: 2px;
+  border-radius: 10px;
+  -webkit-text-stroke: 1.5px var(--ink);
+  text-shadow: 2px 2px 0 var(--ink);
+  box-shadow: var(--shadow-sm);
+}
+.land-mark-giant {
+  font-size: clamp(76px, 25vw, 168px);
+  padding: var(--sp-2) var(--sp-4) var(--sp-3) var(--sp-3);
+  border-width: 4px;
+  border-radius: 26px;
+  -webkit-text-stroke: 4px var(--ink);
+  text-shadow: 6px 6px 0 var(--ink);
+  box-shadow: var(--shadow-lg);
+  animation: land-wobble 4.5s ease-in-out infinite;
+}
+
+/* ------------------------------------------------------------------------------------------------------------------
+   Top bar
+   ------------------------------------------------------------------------------------------------------------------ */
+.land-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  padding-block: var(--sp-3);
+}
+.land-top-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 44px;
+  min-width: 0;
+  text-decoration: none;
+}
+.land-top-words {
+  display: grid;
+  justify-items: start;
+  gap: calc(var(--sp-1) / 2);
+  min-width: 0;
+}
+.land-top-words strong {
+  font-family: var(--font-display);
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+.land-top-links {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-shrink: 0;
+}
+.land-top-join {
+  display: none;
+}
+/* Phones: the hero carries the big mark + credit, so the top bar keeps only the mini sticker and Log in. */
+@media (max-width: 767px) {
+  .land-top-words {
+    display: none;
+  }
+}
+
+/* ------------------------------------------------------------------------------------------------------------------
+   Hero
+   ------------------------------------------------------------------------------------------------------------------ */
+.land-hero {
+  display: grid;
+  gap: var(--sp-5);
+  padding-block: var(--sp-2) var(--sp-4);
+}
+.land-hero-copy {
+  min-width: 0;
+}
+.land-logo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--sp-4);
+  margin: var(--sp-2) 0 var(--sp-4);
+}
+.land-logo-side {
+  display: grid;
+  justify-items: start;
+  gap: var(--sp-1);
+  padding-bottom: var(--sp-1);
+}
+.land-logo-word {
+  font-family: var(--font-display);
+  font-size: clamp(20px, 5vw, 28px);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.land-credit {
+  font-size: 13px;
+  transform: rotate(-4deg);
+  box-shadow: 3px 3px 0 var(--secondary);
+}
+.land-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  max-width: 100%;
+  margin-bottom: var(--sp-3);
+  padding: calc(var(--sp-1) / 2) var(--sp-2);
+  border: var(--line);
+  border-radius: var(--r-pill);
+  background: var(--lime);
+  box-shadow: var(--shadow-sm);
+  font-size: 14px;
+  font-weight: 800;
+  transform: rotate(-1.5deg);
+}
+.land-title {
+  margin-bottom: var(--sp-3);
+  font-size: clamp(38px, 11vw, 84px);
+  line-height: 0.98;
+  letter-spacing: -0.035em;
+}
+.land-hl {
+  display: inline-block;
+  padding: 0 var(--sp-1) calc(var(--sp-1) / 2);
+  border: var(--line-thick);
+  border-radius: 14px;
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: var(--shadow);
+  transform: rotate(-2.5deg);
+}
+.land-sub {
+  max-width: 34ch;
+  margin-bottom: var(--sp-4);
+  font-size: clamp(16px, 4.4vw, 21px);
+  font-weight: 500;
+  line-height: 1.45;
+}
+.land-ctas {
+  display: grid;
+  gap: var(--sp-3);
+}
+.land-cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+.land-cta-row .land-btn {
+  flex: 1 1 auto;
+  padding-inline: var(--sp-3);
+}
+.land-note {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-top: var(--sp-4);
+  font-size: 14px;
+  font-weight: 700;
+}
+.land-note .icon {
+  width: 26px;
+  height: 26px;
+  padding: calc(var(--sp-1) / 2);
+  border: var(--line);
+  border-radius: 50%;
+  background: var(--mint);
+}
+
+/* Floating sticker collage ------------------------------------------------------------------------------------------ */
+.land-collage {
+  width: 100%;
+  max-width: 560px;
+  margin-inline: auto;
+}
+.land-stage {
+  position: relative;
+  aspect-ratio: 1 / 0.98;
+}
+.land-hero-card {
+  position: absolute;
+  z-index: 1;
+  top: 25%;
+  left: 9%;
+  right: 9%;
+  padding: var(--sp-4) var(--sp-2) var(--sp-2);
+  border: var(--line-thick);
+  border-radius: 22px;
+  background-color: var(--accent);
+  background-image: radial-gradient(rgba(23, 23, 23, 0.14) 1.4px, transparent 1.8px);
+  background-size: 16px 16px;
+  box-shadow: var(--shadow-lg);
+  transform: rotate(-3deg);
+  animation: land-card 7s ease-in-out infinite;
+}
+.land-hero-art {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.land-hero-tag {
+  position: absolute;
+  top: calc(var(--sp-3) * -1);
+  left: 50%;
+  translate: -50% 0;
+  white-space: nowrap;
+  padding: calc(var(--sp-1) / 2) var(--sp-2);
+  border: var(--line);
+  border-radius: var(--r-pill);
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transform: rotate(-4deg);
+}
+.land-sticker {
+  position: absolute;
+  z-index: 2;
+  left: var(--x);
+  top: var(--y);
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border: var(--line-thick);
+  border-radius: 50%;
+  background: var(--t-soft);
+  box-shadow: var(--shadow);
+  transform: rotate(var(--r));
+  animation: land-bob 5.2s ease-in-out infinite;
+  animation-delay: calc(var(--d) * -1);
+}
+.land-s-lg { width: 26%; }
+.land-s-md { width: 21%; }
+.land-s-sm { width: 17%; }
+.land-sticker-art {
+  width: 88%;
+  height: 88%;
+}
+.land-chip {
+  position: absolute;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--sp-1) / 2);
+  padding: calc(var(--sp-1) / 2) var(--sp-2) calc(var(--sp-1) / 2) var(--sp-1);
+  border: var(--line);
+  border-radius: var(--r-pill);
+  background: var(--paper-2);
+  box-shadow: var(--shadow-sm);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  animation: land-float 4.6s ease-in-out infinite;
+}
+.land-chip .icon {
+  width: 18px;
+  height: 18px;
+}
+.land-chip-token {
+  left: 27%;
+  top: 68%;
+  background: var(--mint);
+  transform: rotate(-3deg);
+  animation-delay: -1.2s;
+}
+.land-chip-upi {
+  right: 0;
+  top: 29%;
+  background: var(--secondary);
+  color: var(--on-secondary);
+  transform: rotate(5deg);
+  animation-delay: -2.4s;
+}
+.land-chip-off {
+  left: 0;
+  top: 48%;
+  background: var(--lavender);
+  transform: rotate(-6deg);
+  animation-delay: -0.4s;
+}
+.land-burst {
+  position: absolute;
+  z-index: 2;
+  right: 1%;
+  bottom: 1%;
+  width: 21%;
+  aspect-ratio: 1;
+  background: var(--ink);
+  clip-path: polygon(50% 0, 61% 17%, 79% 9%, 79% 29%, 98% 32%, 86% 50%, 98% 68%, 79% 71%, 79% 91%, 61% 83%, 50% 100%,
+    39% 83%, 21% 91%, 21% 71%, 2% 68%, 14% 50%, 2% 32%, 21% 29%, 21% 9%, 39% 17%);
+  animation: land-spin 18s linear infinite;
+}
+.land-burst::before {
+  content: '';
+  position: absolute;
+  inset: 5%;
+  background: var(--lime);
+  clip-path: inherit;
+}
+.land-burst span {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-size: clamp(10px, 2.9vw, 16px);
+  font-weight: 900;
+  line-height: 1;
+  text-align: center;
+  text-transform: uppercase;
+  transform: rotate(-14deg);
+}
+
+/* ------------------------------------------------------------------------------------------------------------------
+   Crossing marquee tapes
+   ------------------------------------------------------------------------------------------------------------------ */
+.land-marquee {
+  position: relative;
+  height: 156px;
+  margin-block: var(--sp-3);
+  overflow: hidden;
+}
+.land-tape {
+  position: absolute;
+  left: -6%;
+  width: 112%;
+  border-block: var(--line-thick);
+  overflow: hidden;
+}
+.land-tape-a {
+  top: 18%;
+  z-index: 2;
+  background: var(--ink);
+  color: var(--accent);
+  transform: rotate(-3deg);
+}
+.land-tape-b {
+  top: 50%;
+  background: var(--secondary);
+  color: var(--ink);
+  transform: rotate(2.5deg);
+}
+.land-tape-track {
+  display: flex;
+  width: max-content;
+  animation: land-marquee 32s linear infinite;
+}
+.land-tape-b .land-tape-track {
+  animation-direction: reverse;
+  animation-duration: 38s;
+}
+.land-tape-run {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-1) var(--sp-3) var(--sp-1) 0;
+  font-family: var(--font-display);
+  font-size: clamp(18px, 4vw, 28px);
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.land-tape-run i {
+  font-style: normal;
+  font-size: 0.8em;
+}
+.land-tape-a .land-tape-run i {
+  color: var(--secondary);
+}
+
+/* ------------------------------------------------------------------------------------------------------------------
+   Sections: features, how it works, collab
+   ------------------------------------------------------------------------------------------------------------------ */
+.land-section {
+  padding-block: var(--sp-5);
+}
+.land-kicker {
+  display: inline-block;
+  margin-bottom: var(--sp-3);
+  padding: calc(var(--sp-1) / 2) var(--sp-2);
+  border: var(--line);
+  border-radius: var(--r-pill);
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transform: rotate(-2deg);
+}
+.land-h2 {
+  max-width: 20ch;
+  margin-bottom: var(--sp-5);
+  font-size: clamp(30px, 8vw, 54px);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+}
+.land-hl-2 {
+  background: linear-gradient(transparent 58%, var(--accent) 58%, var(--accent) 92%, transparent 92%);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+/* Feature grid */
+.land-feat-grid,
+.land-steps,
+.land-theme-chips,
+.land-honest {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.land-feat-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--sp-4);
+}
+.land-feat {
+  position: relative;
+  min-width: 0;
+  padding: var(--sp-4) var(--sp-3) var(--sp-4);
+  border: var(--line-thick);
+  border-radius: 18px;
+  background: var(--t-soft);
+  box-shadow: var(--shadow);
+  transform: rotate(-0.6deg);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.land-feat:nth-child(even) {
+  transform: rotate(0.6deg);
+}
+@media (hover: hover) {
+  .land-feat:hover {
+    transform: translate(-2px, -2px) rotate(0);
+    box-shadow: var(--shadow-lg);
+  }
+}
+.land-feat-icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: var(--sp-3);
+  border: var(--line-thick);
+  border-radius: 16px;
+  background: var(--t);
+  box-shadow: var(--shadow-sm);
+  transform: rotate(-6deg);
+}
+.land-feat-icon .icon {
+  width: 28px;
+  height: 28px;
+}
+.land-feat-art {
+  position: absolute;
+  top: calc(var(--sp-3) * -1);
+  right: var(--sp-2);
+  width: 92px;
+  height: 92px;
+  transform: rotate(8deg);
+}
+.land-feat h3 {
+  margin-bottom: var(--sp-1);
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+.land-feat p {
+  font-size: 15px;
+  line-height: 1.5;
+}
+.land-theme-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+  margin-top: var(--sp-3);
+}
+.land-theme-chips li {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--sp-1) / 2);
+  padding: calc(var(--sp-1) / 2) var(--sp-1);
+  border: var(--line);
+  border-radius: var(--r-pill);
+  background: var(--chip, var(--yellow));
+  box-shadow: var(--shadow-sm);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* How it works */
+.land-steps {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--sp-5);
+}
+.land-step {
+  position: relative;
+  min-width: 0;
+  padding: var(--sp-4) var(--sp-3);
+  border: var(--line-thick);
+  border-radius: 18px;
+  background: var(--paper-2);
+  box-shadow: var(--shadow);
+}
+.land-step:not(:last-child)::after {
+  content: '↓';
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  bottom: calc(var(--sp-5) / -2 - 20px);
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin-left: -20px;
+  border: var(--line);
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 20px;
+  font-weight: 900;
+}
+.land-step-no {
+  display: block;
+  margin-bottom: var(--sp-2);
+  font-family: var(--font-display);
+  font-size: 68px;
+  font-weight: 900;
+  line-height: 0.9;
+  color: var(--t);
+  -webkit-text-stroke: 2.5px var(--ink);
+  paint-order: stroke fill;
+  text-shadow: 4px 4px 0 var(--ink);
+}
+.land-step-art {
+  position: absolute;
+  top: var(--sp-2);
+  right: var(--sp-2);
+  width: 84px;
+  height: 84px;
+  transform: rotate(-6deg);
+}
+.land-step h3 {
+  margin-bottom: var(--sp-1);
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+.land-step p {
+  font-size: 15px;
+}
+
+/* Stall's Collab teaser */
+.land-collab-card {
+  display: grid;
+  gap: var(--sp-4);
+  align-items: center;
+  padding: var(--sp-4) var(--sp-3);
+  border: var(--line-thick);
+  border-radius: 22px;
+  background: var(--ink);
+  color: var(--paper);
+  box-shadow: 6px 6px 0 var(--secondary);
+  transform: rotate(-0.8deg);
+}
+.land-soon {
+  display: inline-block;
+  margin-bottom: var(--sp-2);
+  padding: calc(var(--sp-1) / 2) var(--sp-2);
+  border: 2px solid var(--paper);
+  border-radius: var(--r-pill);
+  background: var(--lavender);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transform: rotate(-3deg);
+}
+.land-collab .land-h2 {
+  margin-bottom: var(--sp-2);
+  color: var(--paper);
+}
+.land-collab-line {
+  margin-bottom: var(--sp-2);
+  font-family: var(--font-display);
+  font-size: clamp(20px, 5vw, 28px);
+  font-weight: 900;
+  line-height: 1.15;
+}
+.land-collab-line mark {
+  padding: 0 calc(var(--sp-1) / 2);
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.land-collab-copy p:last-child {
+  max-width: 46ch;
+  color: #e9e3d6;
+  font-size: 15px;
+}
+.land-collab-art {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+}
+.land-collab-bubble {
+  display: grid;
+  place-items: center;
+  width: clamp(96px, 30vw, 150px);
+  aspect-ratio: 1;
+  border: 3px solid var(--paper);
+  border-radius: 50%;
+  background: var(--t);
+  animation: land-bob 5.5s ease-in-out infinite;
+  --r: -6deg;
+}
+.land-collab-bubble + .land-collab-plus + .land-collab-bubble {
+  --r: 6deg;
+  animation-delay: -2.2s;
+}
+.land-collab-svg {
+  width: 86%;
+  height: 86%;
+}
+.land-collab-plus {
+  font-family: var(--font-display);
+  font-size: 44px;
+  font-weight: 900;
+  color: var(--accent);
+}
+
+/* ------------------------------------------------------------------------------------------------------------------
+   Final CTA band & footer
+   ------------------------------------------------------------------------------------------------------------------ */
+.land-final {
+  margin-top: var(--sp-4);
+  padding: var(--sp-5) var(--sp-3);
+  border-block: var(--line-thick);
+  background-color: var(--accent);
+  background-image: repeating-linear-gradient(-45deg, transparent 0 18px, rgba(23, 23, 23, 0.06) 18px 36px);
+  color: var(--on-accent);
+  text-align: center;
+}
+.land-final-title {
+  max-width: 16ch;
+  margin: 0 auto var(--sp-2);
+  font-size: clamp(32px, 9vw, 66px);
+  line-height: 1;
+  letter-spacing: -0.035em;
+}
+.land-final p {
+  margin-bottom: var(--sp-4);
+  font-size: 17px;
+  font-weight: 700;
+}
+.land-final-ctas {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--sp-3);
+  max-width: 420px;
+  margin: 0 auto;
+}
+.land-foot {
+  display: grid;
+  gap: var(--sp-4);
+  padding-block: var(--sp-5) var(--sp-3);
+}
+.land-foot-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+.land-foot-brand .land-mark-mini {
+  font-size: 34px;
+}
+.land-foot-words {
+  display: grid;
+  justify-items: start;
+  gap: calc(var(--sp-1) / 2);
+}
+.land-foot-words strong {
+  font-family: var(--font-display);
+  font-size: 18px;
+}
+.land-honest {
+  display: grid;
+  gap: var(--sp-2);
+}
+.land-honest li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border: var(--line);
+  border-radius: var(--r);
+  background: var(--paper-2);
+  box-shadow: var(--shadow-sm);
+  font-size: 14px;
+  line-height: 1.45;
+}
+.land-foot-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--sp-4);
+}
+.land-foot-fine {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ------------------------------------------------------------------------------------------------------------------
+   Motion
+   ------------------------------------------------------------------------------------------------------------------ */
+@keyframes land-bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(var(--r, 0deg));
+  }
+  50% {
+    transform: translateY(-9px) rotate(calc(var(--r, 0deg) + 4deg));
+  }
+}
+@keyframes land-float {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -6px;
+  }
+}
+@keyframes land-card {
+  0%,
+  100% {
+    transform: rotate(-3deg);
+  }
+  50% {
+    transform: rotate(-1.5deg) scale(1.015);
+  }
+}
+@keyframes land-wobble {
+  0%,
+  100% {
+    transform: rotate(-5deg) skewX(-9deg);
+  }
+  50% {
+    transform: rotate(-2deg) skewX(-9deg) scale(1.03);
+  }
+}
+@keyframes land-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes land-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .land-mark-giant,
+  .land-hero-card,
+  .land-sticker,
+  .land-chip,
+  .land-burst,
+  .land-tape-track,
+  .land-collab-bubble {
+    animation: none !important;
+  }
+  .land-btn,
+  .land-feat,
+  .land-arrow {
+    transition: none;
+  }
+}
+
+/* ------------------------------------------------------------------------------------------------------------------
+   Narrow phones (≤350px)
+   ------------------------------------------------------------------------------------------------------------------ */
+@media (max-width: 350px) {
+  .land-top-words strong {
+    display: none;
+  }
+  .land-btn-xl {
+    font-size: 20px;
+  }
+  .land-chip {
+    font-size: 11px;
+  }
+  .land-feat-art {
+    width: 76px;
+    height: 76px;
+  }
+}
+
+/* ------------------------------------------------------------------------------------------------------------------
+   Tablet 768–1023px (and up)
+   ------------------------------------------------------------------------------------------------------------------ */
+@media (min-width: 768px) {
+  .land-wrap {
+    padding-inline: var(--sp-4);
+  }
+  .land-top-join {
+    display: inline-flex;
+  }
+  .land-logo {
+    margin-bottom: var(--sp-5);
+  }
+  .land-ctas {
+    justify-items: start;
+  }
+  .land-btn-xl {
+    width: auto;
+    min-width: 320px;
+    font-size: 24px;
+  }
+  .land-cta-row .land-btn {
+    flex: 0 1 auto;
+  }
+  .land-chip {
+    font-size: 14px;
+  }
+  .land-marquee {
+    height: 176px;
+  }
+  .land-feat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: var(--sp-5);
+  }
+  .land-steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--sp-4);
+  }
+  .land-step:not(:last-child)::after {
+    content: '→';
+    left: auto;
+    top: 50%;
+    bottom: auto;
+    right: calc(var(--sp-4) / -2 - 20px);
+    margin: -20px 0 0;
+  }
+  .land-step-art {
+    width: 72px;
+    height: 72px;
+  }
+  .land-collab-card {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    padding: var(--sp-5);
+  }
+  .land-final-ctas {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    max-width: none;
+  }
+  .land-honest {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Tablet only: the hero becomes a centred poster above the sticker collage. */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .land-hero-copy {
+    text-align: center;
+  }
+  .land-logo,
+  .land-cta-row,
+  .land-note {
+    justify-content: center;
+  }
+  .land-title,
+  .land-sub {
+    margin-inline: auto;
+  }
+  .land-ctas {
+    justify-items: center;
+  }
+  .land-mark-giant {
+    font-size: 150px;
+  }
+}
+
+/* ------------------------------------------------------------------------------------------------------------------
+   Desktop ≥1024px
+   ------------------------------------------------------------------------------------------------------------------ */
+@media (min-width: 1024px) {
+  .land-wrap {
+    padding-inline: var(--sp-5);
+  }
+  .land-hero {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    align-items: center;
+    gap: var(--sp-5);
+    padding-block: var(--sp-3) var(--sp-5);
+  }
+  .land-title {
+    font-size: clamp(56px, 5.4vw, 84px);
+  }
+  .land-sub {
+    font-size: 20px;
+  }
+  .land-feat-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .land-feat {
+    padding: var(--sp-5) var(--sp-4) var(--sp-4);
+  }
+  .land-step {
+    padding: var(--sp-5) var(--sp-4) var(--sp-4);
+  }
+  .land-step-art {
+    width: 92px;
+    height: 92px;
+  }
+  .land-marquee {
+    height: 200px;
+  }
+  .land-final {
+    padding-block: calc(var(--sp-5) * 2);
+  }
+  .land-foot {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    column-gap: var(--sp-5);
+  }
+  .land-foot-links,
+  .land-foot-fine {
+    grid-column: 2;
+  }
+}
